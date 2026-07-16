@@ -63,6 +63,14 @@
 - Exposto endpoint HTTP `POST /registrar` para acionar o onboarding minimo via web.
 - Adicionado teste de sucesso HTTP (201) e teste de validacao HTTP (422) para o endpoint.
 - Extraida a logica do endpoint para controller dedicado `RegisterOwnerAndCompanyController`.
+- Validacao do endpoint movida para Form Request dedicado `RegisterOwnerAndCompanyRequest`.
+- Validacao fortalecida com unicidade de e-mail/CNPJ e normalizacao de entrada (email/cnpj/tax_regime) no Form Request.
+- Cobertura de testes HTTP ampliada para conflitos de unicidade: e-mail existente e CNPJ existente (422).
+- Mensagens de validacao padronizadas em pt-BR no Form Request de onboarding.
+- Testes HTTP passam a validar explicitamente os textos de erro em pt-BR no JSON de resposta.
+- Onboarding passa a criar assinatura inicial em status `trialing` (14 dias) na mesma transacao.
+- Onboarding passa a criar conta bancaria padrao da empresa (`Caixa`, tipo `cash`, saldo inicial e atual zerados, `is_default = true`) na mesma transacao.
+- Onboarding passa a semear o plano de contas padrao da empresa (`financial_categories`) com estrutura hierarquica e categorias de sistema obrigatorias.
 
 ### Validacoes da etapa 0.4
 

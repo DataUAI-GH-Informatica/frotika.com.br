@@ -4,16 +4,25 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy\Actions;
 
+use App\Domain\Billing\Models\Subscription;
+use App\Domain\Finance\Actions\SeedDefaultFinancialCategories;
+use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Tenancy\Data\RegisterOwnerAndCompanyData;
 use App\Domain\Tenancy\Data\RegisterOwnerAndCompanyResult;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
 use App\Models\User;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class RegisterOwnerAndCompany
 {
+    public function __construct(
+        private readonly TenantContext $tenant,
+        private readonly SeedDefaultFinancialCategories $seedDefaultFinancialCategories,
+    ) {}
+
     public function execute(RegisterOwnerAndCompanyData $data): RegisterOwnerAndCompanyResult
     {
         /** @var RegisterOwnerAndCompanyResult $result */
@@ -48,6 +57,28 @@ final class RegisterOwnerAndCompany
             ]);
 
             $company->users()->attach($user->getKey());
+
+            Subscription::query()->create([
+                'group_id' => $group->getKey(),
+                'status' => 'trialing',
+                'started_at' => now(),
+                'trial_ends_at' => now()->addDays(14),
+                'price_cents' => 0,
+            ]);
+
+            $this->seedDefaultFinancialCategories->execute($company);
+
+            $this->tenant->runFor($company, function (): void {
+                BankAccount::query()->create([
+                    'name' => 'Caixa',
+                    'type' => 'cash',
+                    'initial_balance_cents' => 0,
+                    'initial_balance_at' => now()->toDateString(),
+                    'current_balance_cents' => 0,
+                    'is_default' => true,
+                    'active' => true,
+                ]);
+            });
 
             $user->forceFill([
                 'current_group_id' => $group->getKey(),

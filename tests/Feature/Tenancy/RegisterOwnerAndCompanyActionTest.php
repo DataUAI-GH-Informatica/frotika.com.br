@@ -27,7 +27,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'group_name' => 'Transportes Serra Azul',
             'company_legal_name' => 'Transportes Serra Azul LTDA',
             'company_trade_name' => 'Serra Azul',
-            'company_cnpj' => '12345678000194',
+            'company_cnpj' => '11222333000181',
             'tax_regime' => 'simples',
         ]);
 
@@ -43,7 +43,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('companies', [
-            'cnpj' => '12345678000194',
+            'cnpj' => '11222333000181',
             'legal_name' => 'Transportes Serra Azul LTDA',
         ]);
     }
@@ -61,6 +61,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
         ]);
 
         $response->assertUnprocessable();
+        $response->assertJsonPath('message', 'Os dados informados sao invalidos.');
         $response->assertJsonStructure([
             'message',
             'errors' => [
@@ -84,6 +85,111 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'company_trade_name',
             'company_cnpj',
         ], array_keys($response->json('errors')));
+        $response->assertJsonPath('errors.name.0', 'O campo nome e obrigatorio.');
+        $response->assertJsonPath('errors.email.0', 'Informe um e-mail valido.');
+    }
+
+    public function test_endpoint_registrar_retorna_422_quando_cnpj_e_semanticamente_invalido(): void
+    {
+        $response = $this->postJson('/registrar', [
+            'name' => 'Guilherme',
+            'email' => 'guilherme-invalid-cnpj@example.com',
+            'password' => 'secret-1234',
+            'group_name' => 'Transportes Serra Azul',
+            'company_legal_name' => 'Transportes Serra Azul LTDA',
+            'company_trade_name' => 'Serra Azul',
+            'company_cnpj' => '12345678000191',
+            'tax_regime' => 'simples',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('message', 'Os dados informados sao invalidos.');
+        $response->assertJsonStructure([
+            'message',
+            'errors' => ['company_cnpj'],
+        ]);
+        $response->assertJsonPath('errors.company_cnpj.0', 'O CNPJ da empresa informado e invalido.');
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'guilherme-invalid-cnpj@example.com',
+        ]);
+        $this->assertDatabaseCount('groups', 0);
+        $this->assertDatabaseCount('companies', 0);
+    }
+
+    public function test_endpoint_registrar_retorna_422_quando_email_ja_existe(): void
+    {
+        User::factory()->create([
+            'email' => 'existente@example.com',
+        ]);
+
+        $response = $this->postJson('/registrar', [
+            'name' => 'Novo Usuario',
+            'email' => 'Existente@Example.com',
+            'password' => 'secret-1234',
+            'group_name' => 'Grupo Novo',
+            'company_legal_name' => 'Empresa Nova LTDA',
+            'company_trade_name' => 'Empresa Nova',
+            'company_cnpj' => '22333444000181',
+            'tax_regime' => 'simples',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('message', 'Os dados informados sao invalidos.');
+        $response->assertJsonStructure([
+            'message',
+            'errors' => ['email'],
+        ]);
+        $response->assertJsonPath('errors.email.0', 'Este e-mail ja esta cadastrado.');
+
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('groups', 0);
+        $this->assertDatabaseCount('companies', 0);
+    }
+
+    public function test_endpoint_registrar_retorna_422_quando_cnpj_ja_existe(): void
+    {
+        $owner = User::factory()->create();
+
+        $group = Group::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'name' => 'Grupo Existente',
+            'type' => 'customer',
+            'owner_user_id' => $owner->getKey(),
+            'status' => 'active',
+        ]);
+
+        Company::query()->create([
+            'group_id' => $group->getKey(),
+            'uuid' => Str::uuid()->toString(),
+            'cnpj' => '33444555000174',
+            'legal_name' => 'Empresa Existente',
+            'trade_name' => 'Existente',
+            'tax_regime' => 'simples',
+        ]);
+
+        $response = $this->postJson('/registrar', [
+            'name' => 'Novo Usuario',
+            'email' => 'novo@example.com',
+            'password' => 'secret-1234',
+            'group_name' => 'Outro Grupo',
+            'company_legal_name' => 'Outra Empresa LTDA',
+            'company_trade_name' => 'Outra Empresa',
+            'company_cnpj' => '33444555000174',
+            'tax_regime' => 'simples',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('message', 'Os dados informados sao invalidos.');
+        $response->assertJsonStructure([
+            'message',
+            'errors' => ['company_cnpj'],
+        ]);
+        $response->assertJsonPath('errors.company_cnpj.0', 'Este CNPJ ja esta cadastrado.');
+
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('groups', 1);
+        $this->assertDatabaseCount('companies', 1);
     }
 
     public function test_cria_estrutura_inicial_de_tenancy_para_owner(): void
@@ -130,6 +236,52 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'company_id' => $result->company->getKey(),
             'user_id' => $result->user->getKey(),
         ]);
+
+        $this->assertDatabaseHas('subscriptions', [
+            'group_id' => $result->group->getKey(),
+            'status' => 'trialing',
+            'price_cents' => 0,
+        ]);
+
+        $this->assertDatabaseHas('bank_accounts', [
+            'company_id' => $result->company->getKey(),
+            'name' => 'Caixa',
+            'type' => 'cash',
+            'initial_balance_cents' => 0,
+            'current_balance_cents' => 0,
+            'is_default' => true,
+            'active' => true,
+        ]);
+
+        $this->assertDatabaseHas('financial_categories', [
+            'company_id' => $result->company->getKey(),
+            'code' => '1.1',
+            'name' => 'Receita de fretes',
+            'type' => 'revenue',
+            'dre_group' => 'gross_revenue',
+            'allocation' => 'vehicle_direct',
+            'is_system' => true,
+            'active' => true,
+        ]);
+
+        $this->assertDatabaseHas('financial_categories', [
+            'company_id' => $result->company->getKey(),
+            'code' => '4.8',
+            'name' => 'Depreciacao',
+            'affects_cashflow' => false,
+            'is_system' => true,
+        ]);
+
+        $this->assertDatabaseHas('financial_categories', [
+            'company_id' => $result->company->getKey(),
+            'code' => '8.4',
+            'name' => 'Transferencia entre contas',
+            'dre_group' => 'non_operating',
+            'allocation' => 'non_vehicle',
+            'is_system' => true,
+        ]);
+
+        $this->assertDatabaseCount('financial_categories', 46);
     }
 
     public function test_faz_rollback_quando_cnpj_duplicado_dispara_erro(): void
@@ -176,6 +328,9 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             $this->assertDatabaseCount('companies', 1);
             $this->assertDatabaseCount('group_user', 0);
             $this->assertDatabaseCount('company_user', 0);
+            $this->assertDatabaseCount('subscriptions', 0);
+            $this->assertDatabaseCount('bank_accounts', 0);
+            $this->assertDatabaseCount('financial_categories', 0);
         }
     }
 }
