@@ -62,6 +62,7 @@
 - Adicionado teste de sucesso do onboarding e teste de rollback completo em erro de CNPJ duplicado.
 - Exposto endpoint HTTP `POST /registrar` para acionar o onboarding minimo via web.
 - Adicionado teste de sucesso HTTP (201) e teste de validacao HTTP (422) para o endpoint.
+- Extraida a logica do endpoint para controller dedicado `RegisterOwnerAndCompanyController`.
 
 ### Validacoes da etapa 0.4
 
