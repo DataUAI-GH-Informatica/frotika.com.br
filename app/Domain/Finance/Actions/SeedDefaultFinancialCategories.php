@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Finance\Actions;
 
+use App\Domain\Finance\Enums\FinancialCategoryAllocation;
+use App\Domain\Finance\Enums\FinancialCategoryDreGroup;
+use App\Domain\Finance\Enums\FinancialCategoryType;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Tenancy\Models\Company;
 use App\Support\Tenancy\TenantContext;
@@ -21,6 +24,8 @@ final class SeedDefaultFinancialCategories
                 $parentCode = $categoryData['parent_code'];
                 unset($categoryData['parent_code']);
 
+                $categoryData = $this->normalizeEnumValues($categoryData);
+
                 $categoryData['parent_id'] = $parentCode === null
                     ? null
                     : $categoryIdsByCode[$parentCode] ?? null;
@@ -29,6 +34,49 @@ final class SeedDefaultFinancialCategories
                 $categoryIdsByCode[$categoryData['code']] = $category->getKey();
             }
         });
+    }
+
+    /**
+     * @param  array{
+     *     code: string,
+     *     name: string,
+     *     type: string|null,
+     *     dre_group: string|null,
+     *     allocation: string|null,
+     *     affects_cashflow: bool,
+     *     is_system: bool,
+     *     active: bool,
+     *     sort_order: int,
+     *     parent_id?: int|null
+     * }  $categoryData
+     * @return array{
+     *     code: string,
+     *     name: string,
+     *     type: string|null,
+     *     dre_group: string|null,
+     *     allocation: string|null,
+     *     affects_cashflow: bool,
+     *     is_system: bool,
+     *     active: bool,
+     *     sort_order: int,
+     *     parent_id?: int|null
+     * }
+     */
+    private function normalizeEnumValues(array $categoryData): array
+    {
+        $categoryData['type'] = $categoryData['type'] === null
+            ? null
+            : FinancialCategoryType::from($categoryData['type'])->value;
+
+        $categoryData['dre_group'] = $categoryData['dre_group'] === null
+            ? null
+            : FinancialCategoryDreGroup::from($categoryData['dre_group'])->value;
+
+        $categoryData['allocation'] = $categoryData['allocation'] === null
+            ? null
+            : FinancialCategoryAllocation::from($categoryData['allocation'])->value;
+
+        return $categoryData;
     }
 
     /**

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Finance\Models;
 
+use App\Domain\Finance\Enums\FinancialCategoryAllocation;
+use App\Domain\Finance\Enums\FinancialCategoryDreGroup;
+use App\Domain\Finance\Enums\FinancialCategoryType;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +23,9 @@ class FinancialCategory extends Model
     protected function casts(): array
     {
         return [
+            'type' => FinancialCategoryType::class,
+            'dre_group' => FinancialCategoryDreGroup::class,
+            'allocation' => FinancialCategoryAllocation::class,
             'affects_cashflow' => 'boolean',
             'is_system' => 'boolean',
             'active' => 'boolean',
