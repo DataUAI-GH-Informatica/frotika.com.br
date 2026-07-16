@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\ShowLoginController;
 use App\Http\Controllers\Tenancy\RegisterOwnerAndCompanyController;
 use App\Http\Controllers\Tenancy\ShowRegisterController;
+use App\Http\Controllers\Tenancy\SwitchCurrentCompanyController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
@@ -20,5 +21,6 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::view('/painel', 'dashboard')->name('dashboard');
+    Route::post('/empresa-atual', SwitchCurrentCompanyController::class)->name('tenancy.switch-company');
     Route::post('/sair', LogoutController::class)->name('logout');
 });

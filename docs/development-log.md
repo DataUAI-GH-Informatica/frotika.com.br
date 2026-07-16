@@ -130,3 +130,18 @@
 
 - `vendor/bin/pint --dirty`
 - `composer test`
+
+## 2026-07-16 - Etapa 0.6 (troca de empresa ativa)
+
+### Entregas da etapa 0.6
+
+- Criada action `SwitchCurrentCompany` para trocar a empresa ativa do usuario autenticado, atualizando `current_group_id` e `current_company_id`.
+- Autorizacao da troca centralizada no backend via Gate `switch-company`, validando vinculo do usuario com empresa e grupo.
+- Criados endpoint e rota autenticada `POST /empresa-atual` (`tenancy.switch-company`) para atualizar empresa ativa e sessao.
+- Criado Form Request `SwitchCurrentCompanyRequest` com validacao de `company_id` e mensagens em pt-BR.
+- Adicionada cobertura de testes em `SwitchCurrentCompanyTest` para sucesso, bloqueio por acesso indevido, empresa inexistente e atualizacao de sessao no endpoint.
+
+### Validacoes da etapa 0.6
+
+- `vendor/bin/pint --dirty`
+- Execucao de PHPUnit pendente no ambiente local (suite bloqueada por configuracao/infra de teste nesta sessao).
