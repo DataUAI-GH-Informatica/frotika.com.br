@@ -60,6 +60,8 @@
 - Criados DTOs `RegisterOwnerAndCompanyData` e `RegisterOwnerAndCompanyResult` para entrada/saida tipadas da action.
 - Fluxo grava `current_group_id` e `current_company_id` no usuario para preparar bootstrap de sessao.
 - Adicionado teste de sucesso do onboarding e teste de rollback completo em erro de CNPJ duplicado.
+- Exposto endpoint HTTP `POST /registrar` para acionar o onboarding minimo via web.
+- Adicionado teste de sucesso HTTP (201) e teste de validacao HTTP (422) para o endpoint.
 
 ### Validacoes da etapa 0.4
 

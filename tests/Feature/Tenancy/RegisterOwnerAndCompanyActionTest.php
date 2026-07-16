@@ -18,6 +18,74 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_endpoint_registrar_cria_onboarding_e_retorna_201(): void
+    {
+        $response = $this->postJson('/registrar', [
+            'name' => 'Guilherme',
+            'email' => 'guilherme-http@example.com',
+            'password' => 'secret-1234',
+            'group_name' => 'Transportes Serra Azul',
+            'company_legal_name' => 'Transportes Serra Azul LTDA',
+            'company_trade_name' => 'Serra Azul',
+            'company_cnpj' => '12345678000194',
+            'tax_regime' => 'simples',
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonStructure(['user_id', 'group_id', 'company_id']);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'guilherme-http@example.com',
+        ]);
+
+        $this->assertDatabaseHas('groups', [
+            'name' => 'Transportes Serra Azul',
+        ]);
+
+        $this->assertDatabaseHas('companies', [
+            'cnpj' => '12345678000194',
+            'legal_name' => 'Transportes Serra Azul LTDA',
+        ]);
+    }
+
+    public function test_endpoint_registrar_retorna_422_quando_payload_e_invalido(): void
+    {
+        $response = $this->postJson('/registrar', [
+            'name' => '',
+            'email' => 'invalido',
+            'password' => '123',
+            'group_name' => '',
+            'company_legal_name' => '',
+            'company_trade_name' => '',
+            'company_cnpj' => '123',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonStructure([
+            'message',
+            'errors' => [
+                'name',
+                'email',
+                'password',
+                'group_name',
+                'company_legal_name',
+                'company_trade_name',
+                'company_cnpj',
+            ],
+        ]);
+
+        $this->assertArrayHasKey('errors', $response->json());
+        $this->assertEqualsCanonicalizing([
+            'name',
+            'email',
+            'password',
+            'group_name',
+            'company_legal_name',
+            'company_trade_name',
+            'company_cnpj',
+        ], array_keys($response->json('errors')));
+    }
+
     public function test_cria_estrutura_inicial_de_tenancy_para_owner(): void
     {
         $action = app(RegisterOwnerAndCompany::class);
