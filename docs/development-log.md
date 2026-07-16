@@ -51,3 +51,18 @@
 - `vendor/bin/phpunit tests/Feature/Tenancy/SetTenantContextMiddlewareTest.php tests/Feature/Tenancy/BelongsToCompanyIsolationTest.php`
 - `vendor/bin/pint --dirty`
 - `composer test`
+
+## 2026-07-15 - Etapa 0.4 (onboarding minimo transacional)
+
+### Entregas da etapa 0.4
+
+- Criada action `RegisterOwnerAndCompany` para criar usuario owner, grupo, empresa e vinculos em uma unica transacao.
+- Criados DTOs `RegisterOwnerAndCompanyData` e `RegisterOwnerAndCompanyResult` para entrada/saida tipadas da action.
+- Fluxo grava `current_group_id` e `current_company_id` no usuario para preparar bootstrap de sessao.
+- Adicionado teste de sucesso do onboarding e teste de rollback completo em erro de CNPJ duplicado.
+
+### Validacoes da etapa 0.4
+
+- `vendor/bin/phpunit tests/Feature/Tenancy/RegisterOwnerAndCompanyActionTest.php`
+- `vendor/bin/pint --dirty`
+- `composer test`
