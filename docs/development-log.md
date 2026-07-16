@@ -74,6 +74,19 @@
 - Categoria financeira passa a usar enums nativos (`type`, `dre_group`, `allocation`) com cast no model para tipagem forte.
 - Adicionado teste dedicado da action `SeedDefaultFinancialCategories` cobrindo hierarquia, isolamento entre empresas e casts de enum.
 - Criada migration inicial de `financial_entries` com os dois eixos de data (`competence_date` e `paid_at`), campos centrais e indices principais para fluxo de caixa e DRE.
+- Criada action `CreateManualFinancialEntry` para inserir lancamentos manuais com validacoes de consistencia (`forecast` sem `paid_at`/conta, `settled` com `paid_at`/conta, categoria e conta da empresa ativa).
+- Adicionado teste da action de lancamento manual cobrindo sucesso, rejeicao de inconsistencias e isolamento entre empresas.
+- Criados enums de `FinancialEntry` (`type`, `status`, `payment_method`) e model `FinancialEntry` com `BelongsToCompany`, casts e relacoes com categoria/conta/autor.
+- Action de lancamento manual passou a persistir via model `FinancialEntry` (Eloquent) mantendo isolamento por tenant e tipagem por enums.
+- Criada action `UpdateManualFinancialEntry` para atualizar lancamentos manuais com as mesmas regras de consistencia de status/data/conta e validacao de categoria por tenant.
+- Adicionado teste dedicado da action de update cobrindo sucesso no tenant ativo e bloqueio de atualizacao entre empresas.
+- Criada action `RecalculateBankAccountCurrentBalance` para recalcular `current_balance_cents` pela formula de saldo em cima dos lancamentos `settled` (receitas menos despesas + saldo inicial).
+- Integrado recálculo automatico de saldo nas actions `CreateManualFinancialEntry`, `UpdateManualFinancialEntry` e `CancelFinancialEntry` para manter conta sempre consistente apos mutacoes.
+- Adicionado teste dedicado do recalculador e ampliadas assercoes de create/update/cancel para validar atualizacao de saldo da conta.
+- Implementado comando `frotika:recalculate-balances` com opcoes `--company` e `--dry-run` para reconciliacao de saldos em lote.
+- Adicionado teste de console para validar o modo aplicacao (persiste saldo) e o modo simulacao (`dry-run`, sem persistencia).
+- Criada action `BuildCashFlowMatrix` para montar matriz dia x conta com saldo de abertura, entradas/saidas diarias, saldo acumulado e filtro de contas por periodo.
+- Adicionado suporte ao toggle de previstos na matriz (inclui `forecast` com `due_date` e fallback em `competence_date`) e teste cobrindo o comportamento.
 
 ### Validacoes da etapa 0.4
 
