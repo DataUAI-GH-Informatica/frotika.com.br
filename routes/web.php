@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\ShowLoginController;
 use App\Http\Controllers\Auth\ShowResetPasswordController;
 use App\Http\Controllers\Auth\ShowVerifyEmailController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Tenancy\LookupCnpjController;
 use App\Http\Controllers\Tenancy\RegisterOwnerAndCompanyController;
 use App\Http\Controllers\Tenancy\ShowRegisterController;
 use App\Http\Controllers\Tenancy\SwitchCurrentCompanyController;
@@ -29,6 +30,10 @@ Route::middleware('guest')->group(function (): void {
 
     Route::get('/registrar', ShowRegisterController::class)->name('register');
     Route::post('/registrar', RegisterOwnerAndCompanyController::class)->name('register.store');
+    Route::get('/registrar/cnpj/{cnpj}', LookupCnpjController::class)
+        ->whereNumber('cnpj')
+        ->middleware('throttle:20,1')
+        ->name('register.cnpj');
 });
 
 Route::middleware('auth')->group(function (): void {

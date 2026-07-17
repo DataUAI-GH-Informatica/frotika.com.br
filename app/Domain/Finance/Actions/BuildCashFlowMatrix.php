@@ -251,7 +251,7 @@ final class BuildCashFlowMatrix
     }
 
     /**
-     * @param  list<int>|null  $values
+     * @param  array<int, mixed>|null  $values
      * @return list<int>|null
      */
     private function normalizeIntegerList(?array $values, string $field): ?array
@@ -286,7 +286,7 @@ final class BuildCashFlowMatrix
     }
 
     /**
-     * @param  list<string>|null  $statuses
+     * @param  array<int, mixed>|null  $statuses
      * @return list<string>
      */
     private function resolveStatuses(bool $includeForecast, ?array $statuses): array

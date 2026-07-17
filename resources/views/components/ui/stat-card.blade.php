@@ -1,4 +1,12 @@
-@props(['label', 'value', 'tone' => 'default', 'hint' => null])
+{{--
+    Card de indicador. O número é o herói: font-display, grande, alinhado à
+    vírgula. Sem ícone, sem sombra, sem cor de fundo.
+
+    Cor só quando codifica um fato (resultado negativo). Padrão é monocromático —
+    tela de frota saudável não tem cor.
+--}}
+
+@props(['label', 'value', 'tone' => 'default', 'hint' => null, 'unit' => null])
 
 @php
     $valueToneClasses =
@@ -11,12 +19,17 @@
         ][$tone] ?? 'text-slate-900';
 @endphp
 
-<x-ui.card class="h-full">
-    <p class="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">{{ $label }}</p>
-    <p class="mt-2 text-right font-mono text-2xl font-semibold tabular {{ $valueToneClasses }}">{{ $value }}</p>
+<div {{ $attributes->merge(['class' => 'rounded-lg border border-slate-200 bg-white p-4']) }}>
+    <p class="text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ $label }}</p>
+    <p class="mt-1 font-display text-2xl font-bold tabular {{ $valueToneClasses }}">
+        @if ($unit)
+            <span class="unit">{{ $unit }}</span>
+        @endif
+        {{ $value }}
+    </p>
 
     @if ($hint)
-        <p class="mt-2 text-xs text-slate-500">{{ $hint }}</p>
+        <p class="mt-1 text-xs text-slate-400">{{ $hint }}</p>
     @endif
 
     @if (isset($slot) && trim((string) $slot) !== '')
@@ -24,4 +37,4 @@
             {{ $slot }}
         </div>
     @endif
-</x-ui.card>
+</div>

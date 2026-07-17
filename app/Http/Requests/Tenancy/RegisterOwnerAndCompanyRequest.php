@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tenancy;
 
+use App\Support\Cnpj\Cnpj;
 use Closure;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,7 +18,7 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, list<Closure|string>>
      */
     public function rules(): array
     {
@@ -34,7 +35,7 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
                 'size:14',
                 'unique:companies,cnpj',
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (! is_string($value) || ! $this->isValidCnpj($value)) {
+                    if (! is_string($value) || ! Cnpj::isValid($value)) {
                         $fail('O CNPJ da empresa informado e invalido.');
                     }
                 },
@@ -78,46 +79,11 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $companyCnpj = (string) $this->input('company_cnpj', '');
-        $normalizedCnpj = preg_replace('/\D+/', '', $companyCnpj) ?? $companyCnpj;
-
         $this->merge([
             'email' => mb_strtolower(trim((string) $this->input('email', ''))),
-            'company_cnpj' => $normalizedCnpj,
+            'company_cnpj' => Cnpj::digits((string) $this->input('company_cnpj', '')),
             'tax_regime' => (string) ($this->input('tax_regime', 'simples') ?: 'simples'),
         ]);
-    }
-
-    private function isValidCnpj(string $cnpj): bool
-    {
-        if (preg_match('/^\d{14}$/', $cnpj) !== 1) {
-            return false;
-        }
-
-        if (preg_match('/^(\d)\1{13}$/', $cnpj) === 1) {
-            return false;
-        }
-
-        $firstDigit = $this->calculateCnpjDigit(substr($cnpj, 0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-        $secondDigit = $this->calculateCnpjDigit(substr($cnpj, 0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-
-        return $cnpj[12] === (string) $firstDigit && $cnpj[13] === (string) $secondDigit;
-    }
-
-    /**
-     * @param  array<int, int>  $weights
-     */
-    private function calculateCnpjDigit(string $base, array $weights): int
-    {
-        $sum = 0;
-
-        foreach ($weights as $index => $weight) {
-            $sum += ((int) $base[$index]) * $weight;
-        }
-
-        $remainder = $sum % 11;
-
-        return $remainder < 2 ? 0 : 11 - $remainder;
     }
 
     protected function failedValidation(Validator $validator): never

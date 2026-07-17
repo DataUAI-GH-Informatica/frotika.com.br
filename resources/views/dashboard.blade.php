@@ -3,143 +3,161 @@
 @section('title', 'Painel | Frotika')
 
 @section('content')
-    <x-ui.page-header title="Painel operacional" subtitle="Julho de 2026 - consolidado da frota">
+    <x-ui.page-header title="Painel operacional" subtitle="Julho de 2026 · consolidado da frota">
         <x-slot:actions>
             <x-ui.button variant="secondary" size="sm">Importar CT-e</x-ui.button>
             <x-ui.button size="sm">Nova viagem</x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
-    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat-card label="Saldo consolidado" value="R$ 128.420,55" tone="default" hint="Base caixa + bancos" />
-        <x-ui.stat-card label="Receita do mes" value="R$ 214.973,10" tone="success" hint="Competencia atual" />
-        <x-ui.stat-card label="Custos do mes" value="R$ 189.441,67" tone="danger" hint="Operacao + administrativo" />
-        <x-ui.stat-card label="Resultado projetado" value="R$ 25.531,43" tone="info" hint="Com previstos ate dia 31" />
+    {{-- Faixa de instrumentos: um único card, separado por filete. Sem 4 cards
+         coloridos. Monocromático — só o resultado ganha sinal, não cor. --}}
+    <section class="rounded-lg border border-slate-200 bg-white">
+        <dl class="grid grid-cols-2 divide-slate-200 md:grid-cols-4 md:divide-x">
+            <div class="border-b border-slate-200 p-4 md:border-b-0">
+                <dt class="text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">Saldo consolidado</dt>
+                <dd class="mt-1 font-display text-2xl font-bold text-slate-900 tabular">
+                    <span class="unit">R$</span> {{ Format::moneyDecimal(128420.55) }}
+                </dd>
+                <p class="mt-1 text-xs text-slate-400">Caixa + bancos</p>
+            </div>
+            <div class="border-b border-slate-200 p-4 md:border-b-0">
+                <dt class="text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">Receita do mês</dt>
+                <dd class="mt-1 font-display text-2xl font-bold text-slate-900 tabular">
+                    <span class="unit">R$</span> {{ Format::moneyDecimal(214973.10) }}
+                </dd>
+                <p class="mt-1 text-xs text-slate-400">Competência atual</p>
+            </div>
+            <div class="border-b border-slate-200 p-4 md:border-b-0">
+                <dt class="text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">Custos do mês</dt>
+                <dd class="mt-1 font-display text-2xl font-bold text-slate-900 tabular">
+                    <span class="unit">R$</span> {{ Format::moneyDecimal(189441.67) }}
+                </dd>
+                <p class="mt-1 text-xs text-slate-400">Operação + administrativo</p>
+            </div>
+            <div class="p-4">
+                <dt class="text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">Resultado projetado</dt>
+                <dd class="mt-1 font-display text-2xl font-bold text-slate-900 tabular">
+                    +<span class="unit">R$</span> {{ Format::moneyDecimal(25531.43) }}
+                </dd>
+                <p class="mt-1 text-xs text-slate-400">Com previstos até dia 31</p>
+            </div>
+        </dl>
     </section>
 
     <section class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_480px]">
-        <x-ui.card class="overflow-hidden p-0">
-            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-2">
+        {{-- Comparativo da frota: o pior primeiro. É o momento "aha". --}}
+        <div class="min-w-0 rounded-lg border border-slate-200 bg-white">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
                 <div>
-                    <p class="font-display text-lg font-semibold text-slate-900">Ranking de veiculos</p>
-                    <p class="text-xs text-slate-500">Ordenado por resultado liquido</p>
+                    <h2 class="font-display text-lg font-semibold text-slate-900">Comparativo da frota</h2>
+                    <p class="text-xs text-slate-400">Ordenado por resultado · o pior primeiro</p>
                 </div>
-                <x-ui.button variant="ghost" size="sm">Ver comparativo</x-ui.button>
+                <x-ui.button variant="ghost" size="sm">Ver DRE</x-ui.button>
             </div>
 
             <div class="max-h-[calc(100vh-22rem)] overflow-auto">
                 <table class="w-full text-sm">
-                    <thead class="sticky top-0 z-10 border-b border-slate-200 bg-slate-50">
-                        <tr class="h-9">
-                            <th class="px-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                Placa</th>
-                            <th
-                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                R$/km</th>
-                            <th
-                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                Custo/km</th>
-                            <th
-                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <thead class="sticky top-0 z-10 bg-slate-50">
+                        <tr class="border-b border-slate-200">
+                            <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                Veículo</th>
+                            <th class="hidden px-3 py-2 text-left text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500 lg:table-cell">
+                                Conjunto</th>
+                            <th class="w-24 px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                km</th>
+                            <th class="w-20 px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                                 km/l</th>
-                            <th
-                                class="w-32 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            <th class="w-64 px-3 py-2 text-left text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                R$/km</th>
+                            <th class="w-32 px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                                 Resultado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr
-                            class="h-9 cursor-pointer border-b border-slate-100 bg-brand-50 shadow-[inset_2px_0_0_0_var(--color-brand-700)]">
+                        <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-3"><x-ui.plate-chip plate="BRA2E19" type="tractor" /></td>
+                            <td class="hidden px-3 text-slate-500 lg:table-cell">+ carreta</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(8120, 0) }}</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(2.11) }}</td>
+                            <td class="px-3 py-1.5"><x-ui.km-gauge :revenue="3.12" :cost="3.44" :breakeven="3.30" compact /></td>
+                            <td class="px-3 text-right font-mono font-medium text-danger-700 tabular">
+                                −<span class="unit">R$</span> {{ Format::moneyDecimal(2596.00) }}
+                            </td>
+                        </tr>
+                        <tr class="h-9 cursor-pointer border-b border-slate-100 bg-brand-50 shadow-[inset_2px_0_0_0_var(--color-brand-700)]">
                             <td class="px-3"><x-ui.plate-chip plate="RIO2A18" type="tractor" /></td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900">4,37</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">3,95</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">2,43</td>
-                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span>
-                                2.120,00</td>
+                            <td class="hidden px-3 text-slate-500 lg:table-cell">+ 2 carretas</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(10243, 0) }}</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(2.43) }}</td>
+                            <td class="px-3 py-1.5"><x-ui.km-gauge :revenue="4.37" :cost="3.95" :breakeven="3.78" compact /></td>
+                            <td class="px-3 text-right font-mono font-medium text-slate-900 tabular">
+                                +<span class="unit">R$</span> {{ Format::moneyDecimal(2120.00) }}
+                            </td>
                         </tr>
                         <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-3"><x-ui.plate-chip plate="MGA4F21" type="tractor" /></td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900">4,90</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">3,80</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">3,02</td>
-                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span>
-                                7.580,00</td>
-                        </tr>
-                        <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50">
-                            <td class="px-3"><x-ui.plate-chip plate="BRA2E19" type="semi_trailer" /></td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900">3,12</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">3,44</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">2,11</td>
-                            <td class="px-3 text-right font-mono tabular text-danger-700">-<span class="unit">R$</span>
-                                2.596,00</td>
+                            <td class="hidden px-3 text-slate-500 lg:table-cell">solo</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(6890, 0) }}</td>
+                            <td class="px-3 text-right font-mono text-slate-600 tabular">{{ Format::moneyDecimal(3.02) }}</td>
+                            <td class="px-3 py-1.5"><x-ui.km-gauge :revenue="4.90" :cost="3.80" :breakeven="3.60" compact /></td>
+                            <td class="px-3 text-right font-mono font-medium text-slate-900 tabular">
+                                +<span class="unit">R$</span> {{ Format::moneyDecimal(7580.00) }}
+                            </td>
                         </tr>
                     </tbody>
-                    <tfoot class="sticky bottom-0 border-t border-slate-300 bg-slate-50">
-                        <tr class="h-9">
-                            <td class="px-3 text-xs uppercase tracking-[0.12em] text-slate-500">Media da frota</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900">4,13</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">3,73</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-700">2,52</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900"><span class="unit">R$</span>
-                                2.368,00</td>
+                    <tfoot class="sticky bottom-0 bg-slate-50">
+                        <tr class="h-9 border-t border-slate-300">
+                            <td class="px-3 text-2xs uppercase tracking-[0.12em] text-slate-500" colspan="2">Média da frota</td>
+                            <td class="px-3 text-right font-mono text-slate-700 tabular">{{ Format::moneyDecimal(25253, 0) }}</td>
+                            <td class="px-3 text-right font-mono text-slate-700 tabular">{{ Format::moneyDecimal(2.52) }}</td>
+                            <td class="px-3 text-right font-mono text-slate-500 tabular">R$/km {{ Format::moneyDecimal(4.13) }}</td>
+                            <td class="px-3 text-right font-mono font-medium text-slate-900 tabular">
+                                +<span class="unit">R$</span> {{ Format::moneyDecimal(7104.00) }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-        </x-ui.card>
+        </div>
 
-        <x-ui.card>
-            <p class="font-display text-lg font-semibold text-slate-900">Detalhe do veiculo selecionado</p>
-            <p class="mt-1 text-sm text-slate-500">RIO2A18 - Scania R450</p>
-
-            <div class="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p class="text-xs uppercase tracking-[0.12em] text-slate-500">Regua de R$/km</p>
-                <div class="mt-3 space-y-2">
+        {{-- Master-detail: o veículo selecionado. A régua é o acento da tela. --}}
+        <div class="rounded-lg border border-slate-200 bg-white">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
+                <div class="flex items-center gap-2">
+                    <x-ui.plate-chip plate="RIO2A18" type="tractor" />
                     <div>
-                        <div class="mb-1 flex items-center justify-between text-xs text-slate-600">
-                            <span>Custo/km</span>
-                            <span class="font-mono tabular">3,95</span>
-                        </div>
-                        <div class="h-2 rounded-md bg-slate-200">
-                            <div class="h-2 w-[72%] rounded-md bg-danger-500"></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="mb-1 flex items-center justify-between text-xs text-slate-600">
-                            <span>Receita/km</span>
-                            <span class="font-mono tabular">4,37</span>
-                        </div>
-                        <div class="h-2 rounded-md bg-slate-200">
-                            <div class="h-2 w-[80%] rounded-md bg-success-500"></div>
-                        </div>
+                        <p class="font-display text-sm font-semibold text-slate-900">Scania R450</p>
+                        <p class="text-xs text-slate-400">+ 2 carretas · julho/2026</p>
                     </div>
                 </div>
-
-                <p class="mt-3 text-sm text-slate-700">
-                    Margem por km: <span class="font-mono tabular text-success-700">+0,42</span>
-                </p>
+                <x-ui.button variant="ghost" size="sm">Abrir DRE</x-ui.button>
             </div>
 
-            <dl class="mt-4 space-y-2 text-sm">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <dt class="text-slate-500">Km rodados</dt>
-                    <dd class="font-mono tabular text-slate-900">10.243</dd>
-                </div>
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <dt class="text-slate-500">Receita liquida</dt>
-                    <dd class="font-mono tabular text-slate-900"><span class="unit">R$</span> 43.708,00</dd>
-                </div>
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <dt class="text-slate-500">Custos variaveis</dt>
-                    <dd class="font-mono tabular text-slate-900">-<span class="unit">R$</span> 25.250,00</dd>
-                </div>
-                <div class="flex items-center justify-between">
-                    <dt class="font-medium text-slate-700">Resultado liquido</dt>
-                    <dd class="font-mono tabular font-semibold text-success-700"><span class="unit">R$</span> 2.120,00
-                    </dd>
-                </div>
-            </dl>
-        </x-ui.card>
+            <div class="p-4">
+                <x-ui.km-gauge :revenue="4.37" :cost="3.95" :breakeven="3.78" />
+
+                <dl class="mt-4 space-y-0 text-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 py-2">
+                        <dt class="text-slate-500">Km rodados</dt>
+                        <dd class="font-mono text-slate-900 tabular">{{ Format::moneyDecimal(10243, 0) }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-100 py-2">
+                        <dt class="text-slate-500">Receita líquida</dt>
+                        <dd class="font-mono text-slate-900 tabular"><span class="unit">R$</span> {{ Format::moneyDecimal(43708.00) }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-100 py-2">
+                        <dt class="text-slate-500">Custos variáveis</dt>
+                        <dd class="font-mono text-slate-900 tabular">−<span class="unit">R$</span> {{ Format::moneyDecimal(25250.00) }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <dt class="font-medium text-slate-700">Resultado líquido</dt>
+                        <dd class="font-display text-lg font-semibold text-success-700 tabular">
+                            +<span class="unit">R$</span> {{ Format::moneyDecimal(2120.00) }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
     </section>
 @endsection

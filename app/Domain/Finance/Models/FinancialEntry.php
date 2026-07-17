@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property FinancialEntryType $type
+ * @property FinancialEntryStatus $status
+ * @property FinancialEntryPaymentMethod|null $payment_method
+ */
 class FinancialEntry extends Model
 {
     use BelongsToCompany;
@@ -33,16 +38,25 @@ class FinancialEntry extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<FinancialCategory, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(FinancialCategory::class, 'financial_category_id');
     }
 
+    /**
+     * @return BelongsTo<BankAccount, $this>
+     */
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class, 'bank_account_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

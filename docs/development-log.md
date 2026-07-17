@@ -200,3 +200,102 @@
 - `vendor/bin/pint --dirty`
 - `vendor/bin/phpunit tests/Feature/Auth/EmailVerificationFlowTest.php tests/Feature/Auth/AuthenticationFlowTest.php tests/Feature/Auth/PasswordResetFlowTest.php`
 - `composer test`
+
+## 2026-07-17 - Etapa 0.10 (refino premium da interface)
+
+### Entregas da etapa 0.10
+
+- Criado o componente de assinatura `x-ui.km-gauge` (regua de R$/km com custo, receita, margem e ponto de equilibrio), a partir de `.github/skills/frotika-ui/reference/exemplo-regua.blade.php`.
+- `dashboard` reescrito como painel de instrumentos: faixa de indicadores monocromatica (no lugar de 4 cards coloridos), comparativo da frota com o pior resultado primeiro e master-detail com a regua como unico acento da tela.
+- `stat-card` alinhado a anatomia (valor em `font-display`, monocromatico por padrao) e `plate-chip` alinhado (borda `slate-800`, tarja do reboque com `opacity-40`).
+- Shell (`layouts/app`) refinado: sidebar com secoes/filete e item ativo correto, busca da topbar com icone + `Ctrl+K` (corrigido o padding sobreposto) e bottom nav mobile com icones reais.
+- Paginas publicas refinadas (`welcome`, `login`, `register`, `forgot-password`, `reset-password`, `verify-email`): removido o ornamento (quadrados flutuantes) e uso da regua real.
+- Acentuacao pt-BR corrigida em toda a interface tocada (layouts, dashboard, welcome, auth/*).
+
+### Validacoes da etapa 0.10
+
+- `npm run build`
+- `vendor/bin/pint --dirty`
+- `composer test`
+
+### Proximos incrementos da etapa 0.10
+
+- Criar `App\Support\Format` (secao 14.3 do blueprint) e migrar a formatacao inline da `km-gauge` e do dashboard para ele.
+- Sem Livewire/Alpine instalados: teclado (setas), ordenacao por URL, selecao em lote e edicao inline ficam para quando as telas virarem componentes Livewire (copiar `reference/exemplo-lista.blade.php`).
+- Reconciliar a tipografia da secao 12.3 do blueprint (Inter/JetBrains Mono) com o que esta no codigo (IBM Plex Sans/Mono, alinhado a skill `frotika-ui`).
+
+## 2026-07-17 - Etapa 0.11 (consulta de CNPJ no onboarding)
+
+### Entregas da etapa 0.11
+
+- Criado helper `App\Support\Cnpj\Cnpj` (digitos, validacao de checksum e formatacao) como fonte unica do checksum; `RegisterOwnerAndCompanyRequest` refatorado para reutiliza-lo (sem mudar comportamento nem mensagens).
+- Criado servico `App\Support\Cnpj\CnpjLookup` com BrasilAPI (fonte primaria) e fallback ReceitaWS, normalizando as duas respostas para o DTO `CnpjData`.
+- Resultado tipado com `CnpjLookupResult` e enum `CnpjLookupStatus` (`found` / `not_found` / `unavailable`): encontrou em qualquer fonte -> found; alguma fonte respondeu que nao existe -> not_found; as duas falharam por rede/indisponibilidade -> unavailable.
+- Exposto endpoint `GET /registrar/cnpj/{cnpj}` (`register.cnpj`, grupo `guest`, `whereNumber`, `throttle:20,1`) via `LookupCnpjController`, que valida o CNPJ antes de consultar (invalido -> 422).
+- Formulario de registro com mascara `00.000.000/0000-00`, limite real de 14 digitos, `inputmode="numeric"`, consulta automatica ao completar o CNPJ, preenchimento de razao social e nome fantasia e destravamento para preenchimento manual quando nao encontra ou a API esta indisponivel (com link "Preencher manualmente" como saida de resiliencia).
+- Endereco, telefone e e-mail sao normalizados pelo servico (colunas ja existem em `companies`), mas ainda nao sao persistidos no onboarding.
+
+### Validacoes da etapa 0.11
+
+- `vendor/bin/pint --dirty`
+- `vendor/bin/phpunit tests/Feature/Tenancy/LookupCnpjControllerTest.php`
+- `composer test` (82 testes)
+
+### Proximos incrementos da etapa 0.11
+
+- Persistir endereco/telefone/e-mail retornados pela consulta (ampliar `RegisterOwnerAndCompanyData`, a action `RegisterOwnerAndCompany` e o `RegisterOwnerAndCompanyRequest`).
+- Ajustar `RegisterOwnerAndCompanyRequest::failedValidation` para responder redirect com erros no fluxo web (hoje sempre JSON 422, o que impede `@error`/`old()` no navegador).
+- Cachear o resultado por CNPJ (ex.: 24h) para reduzir chamadas repetidas as APIs externas.
+
+## 2026-07-17 - Etapa 0.12 (helper de formatacao pt-BR)
+
+### Entregas da etapa 0.12
+
+- Criado `App\Support\Format` (secao 14.3 do blueprint) com `money`, `moneyDecimal`, `liters`, `km`, `consumption`, `percent`, `plate`, `cnpj`, `cpf`, `cteKey`, `date` e `dateTime`.
+- Convencao de moeda: `money()` embute o `R$` e usa sinal de menos tipografico (−); em tabela/card o numero usa `moneyDecimal()` (sem simbolo) e o `R$` fica num `<span class="unit">` a parte, como a skill `frotika-ui` espera.
+- `Format::cnpj` reutiliza `App\Support\Cnpj\Cnpj::format`, mantendo fonte unica de formatacao de CNPJ.
+- Registrado alias global `Format` no `AppServiceProvider` (`AliasLoader`) para uso direto na Blade.
+- `x-ui.km-gauge` e `dashboard` migrados: removida a formatacao inline (`number_format`/closure), tudo passa por `Format`.
+- Adicionado teste unitario `FormatTest` (moeda, decimal, litros, km, consumo/null, percentual, CNPJ, CPF, chave de CT-e, datas) e teste de render `KmGaugeComponentTest` (valida a regua e a resolucao do alias `Format` dentro da Blade).
+
+### Validacoes da etapa 0.12
+
+- `vendor/bin/pint --dirty`
+- `vendor/bin/phpunit tests/Unit/Support/FormatTest.php tests/Feature/Ui/KmGaugeComponentTest.php`
+- `composer test` (96 testes)
+- `npm run build`
+
+### Proximos incrementos da etapa 0.12
+
+- Consumir `Format` nas proximas telas (fluxo de caixa, DRE) e no seeder de demonstracao.
+- Reconciliar a tipografia da secao 12.3 do blueprint (Inter/JetBrains Mono) com o codigo (IBM Plex Sans/Mono).
+
+## 2026-07-17 - Etapa 0.13 (Livewire, Larastan e CI)
+
+### Entregas da etapa 0.13
+
+- Instalado `livewire/livewire` v4. O Livewire 4 embute o Alpine e auto-injeta seus assets na resposta HTML, entao o Alpine fica disponivel em todas as paginas sem editar layout.
+- Instalado `larastan/larastan` v3 + `phpstan.neon.dist` no nivel 6, analisando `app/`, `database/` e `routes/`.
+- Zerados os 58 erros iniciais do nivel 6 (corrigindo a causa, sem baseline nem ignore):
+  - Genericos de relations/casts/scope anotados (`@return BelongsTo<...>`/`HasMany<...>`/`BelongsToMany<...>`, `@implements CastsAttributes<...>`, `CompanyScope` como `@template ... @implements Scope<TModel>`).
+  - `@property` de enums nos models de Finance (`type`, `status`, `frequency`, `payment_method`) — o Larastan inferia `string` a partir do schema das migrations.
+  - `FinancialCategory::$type` documentado como nullable (categorias sinteticas/agrupadoras nao tem tipo).
+  - `@use HasFactory<\Database\Factories\UserFactory>` corrigido em `User`.
+  - `rules()` do `RegisterOwnerAndCompanyRequest` com `@return array<string, list<Closure|string>>`.
+  - `routes/console.php`: `self::SUCCESS/FAILURE` -> `Command::SUCCESS/FAILURE` (o `self` nao tinha escopo de classe dentro dos closures de comando).
+  - `UpdateManualFinancialEntry`: removido nullsafe/comparacao redundante em ramo ja garantido nao-nulo pelo Larastan.
+  - `BuildCashFlowMatrix`: `@param` dos normalizadores de input externo corrigidos para `array<int, mixed>` (o input cru nao e tipado).
+- **Bug real corrigido:** `CnpjLookup` — o fallback da ReceitaWS nunca sinalizava `NotFound` (retornava so `?CnpjData`), tornando aquele ramo morto. Agora retorna `CnpjLookupStatus::NotFound` quando a Receita rejeita o CNPJ. Novo teste cobre BrasilAPI indisponivel + ReceitaWS rejeitando -> `not_found`.
+- Workflow `.github/workflows/ci.yml`: PHP 8.3, `composer install`, `npm ci && npm run build`, `pint --test`, `phpstan` e `composer test`.
+
+### Validacoes da etapa 0.13
+
+- `vendor/bin/pint --test`
+- `vendor/bin/phpstan analyse` (0 erros, nivel 6)
+- `composer test` (97 testes)
+- `npm run build`
+
+### Proximos incrementos da etapa 0.13
+
+- Primeira listagem Livewire (Fase 2 - Frota) copiando `frotika-ui/reference/exemplo-lista.blade.php`, ja com a `km-gauge` no card do veiculo.
+- Quando os testes passarem a usar recursos do MySQL 8 (a instrucao de testes ja pede), trocar o SQLite `:memory:` do `phpunit.xml` por um servico MySQL no workflow de CI.

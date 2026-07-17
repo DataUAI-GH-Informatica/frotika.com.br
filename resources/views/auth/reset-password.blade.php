@@ -4,10 +4,7 @@
 
 @section('content')
     <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-start">
-        <section class="relative overflow-hidden rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
-            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50">
-            </div>
-
+        <section class="rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
             <p
                 class="inline-flex items-center rounded-md bg-accent-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent-300">
                 Acesso seguro
@@ -29,7 +26,7 @@
                 <x-ui.input label="E-mail" name="email" type="email" :value="$email" placeholder="voce@empresa.com.br"
                     autocomplete="email" required />
 
-                <x-ui.input label="Nova senha" name="password" type="password" placeholder="No minimo 8 caracteres"
+                <x-ui.input label="Nova senha" name="password" type="password" placeholder="No mínimo 8 caracteres"
                     autocomplete="new-password" required />
 
                 <x-ui.input label="Confirmar nova senha" name="password_confirmation" type="password"

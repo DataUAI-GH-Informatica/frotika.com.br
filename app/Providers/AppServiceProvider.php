@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
+use App\Support\Format;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -27,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Alias global para usar Format:: direto na Blade (seção 14.3 do blueprint).
+        AliasLoader::getInstance()->alias('Format', Format::class);
+
         Gate::define('switch-company', static function (User $user, Company $company): bool {
             return $user->companies()->whereKey($company->getKey())->exists()
                 && $user->groups()->whereKey($company->getAttribute('group_id'))->exists();

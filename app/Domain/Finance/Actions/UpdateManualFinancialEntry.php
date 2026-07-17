@@ -202,7 +202,7 @@ final class UpdateManualFinancialEntry
                 }
             }
 
-            if ($isTransferEntry && $pairEntry?->bank_account_id !== null && (int) $validated['bank_account_id'] === (int) $pairEntry->bank_account_id) {
+            if ($isTransferEntry && $pairEntry->bank_account_id !== null && (int) $validated['bank_account_id'] === (int) $pairEntry->bank_account_id) {
                 throw ValidationException::withMessages([
                     'bank_account_id' => 'Conta de origem e destino da transferencia devem ser diferentes.',
                 ]);
@@ -228,7 +228,7 @@ final class UpdateManualFinancialEntry
                 'reconciled_at' => null,
             ])->save();
 
-            if ($isTransferEntry && $pairEntry !== null) {
+            if ($isTransferEntry) {
                 $pairEntry->forceFill([
                     'financial_category_id' => $validated['financial_category_id'],
                     'description' => $validated['description'],

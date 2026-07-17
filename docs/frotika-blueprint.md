@@ -3,7 +3,7 @@
 > **Documento mestre para o agente de desenvolvimento.**
 > Sistema de gestão para micro transportadoras — `frotika.com.br`
 > Stack: Laravel 13.8 · PHP 8.3 · Tailwind CSS v4 · Livewire · MySQL 8
-> Versão do documento: 1.0 · Julho/2026
+> Versão do documento: 1.1 · Julho/2026
 
 ---
 
@@ -188,6 +188,8 @@ Group (tenant / assinatura / faturamento)
 ```
 
 O wizard é pulável, mas o dashboard mostra checklist de onboarding até completo.
+
+> **Implementado (etapa 0.11).** A consulta da Receita do passo `2c` usa `App\Support\Cnpj\CnpjLookup` — BrasilAPI como fonte primária e ReceitaWS como fallback — exposta em `GET /registrar/cnpj/{cnpj}` (`LookupCnpjController`). No formulário de cadastro o CNPJ tem máscara e limite de 14 dígitos; ao completá-lo, razão social e nome fantasia são preenchidas automaticamente, com destravamento para preenchimento manual quando o CNPJ não é encontrado ou as APIs estão indisponíveis. Endereço, telefone e e-mail já são normalizados pelo serviço (as colunas existem em `companies`), mas **ainda não são persistidos** no onboarding — ver [seção 16.1](#161-estado-atual-e-sequência-de-continuação).
 
 ### 3.3 Implementação do isolamento
 
@@ -1553,9 +1555,9 @@ Cada fase é entregável e testável. Não iniciar a próxima com a anterior ver
 - [ ] Tailwind v4 com os tokens da [seção 12.4](#124-tokens-tailwind-v4)
 - [ ] Fontes (Archivo, Inter, JetBrains Mono) auto-hospedadas
 - [ ] Componentes `ui/*` da [seção 12.5](#125-componentes-blade)
-- [ ] `Format`, `Money` cast, `Apportionment` (maior resto) + testes
+- [x] `Format`, `Money` cast, `Apportionment` (maior resto) + testes
 - [ ] Layout: sidebar retrátil + topbar + `page-header`
-- [ ] Pint, Larastan 6, CI (testes + pint + phpstan)
+- [x] Pint, Larastan 6, CI (testes + pint + phpstan)
 - [ ] `docs/adr/` com os ADRs da seção 2
 
 ### Fase 1 — Tenancy, auth e onboarding
@@ -1563,7 +1565,8 @@ Cada fase é entregável e testável. Não iniciar a próxima com a anterior ver
 - [ ] Migrations: `groups`, `companies`, `users`, `group_user`, `company_user`, `invitations`
 - [ ] `TenantContext`, `CompanyScope`, `BelongsToCompany`, `SetTenantContext`
 - [ ] Spatie permission com teams; papéis e permissões da [seção 4](#4-papéis-e-permissões)
-- [ ] Registro → criação de grupo + empresa + assinatura trial + plano de contas + conta padrão
+- [x] Registro → criação de grupo + empresa + assinatura trial + plano de contas + conta padrão
+- [x] Consulta de CNPJ na Receita (BrasilAPI + fallback ReceitaWS) no cadastro, com máscara/limite, preenchimento automático e fallback manual — ver [seção 16.1](#161-estado-atual-e-sequência-de-continuação)
 - [ ] Wizard de onboarding
 - [ ] Convite de usuários, seletor de empresa
 - [ ] Transferência de propriedade
@@ -1649,6 +1652,32 @@ Cada fase é entregável e testável. Não iniciar a próxima com a anterior ver
 - [ ] LGPD: exportação e exclusão de dados
 - [ ] Backup automatizado + restore testado
 - [ ] Sentry, Horizon em produção
+
+### 16.1 Estado atual e sequência de continuação
+
+> Diário completo em [development-log.md](development-log.md). Este resumo é o que já está em `main` e a ordem recomendada para seguir sem quebrar dependência.
+
+**Concluído até a etapa 0.11**
+
+- **Fundação e tenancy** (0.1–0.6): `Apportionment` (maior resto), `Money` + cast em centavos, `TenantContext`/`CompanyScope`/`BelongsToCompany`, `SetTenantContext`, onboarding transacional (`RegisterOwnerAndCompany`) e troca de empresa ativa.
+- **Financeiro base** (0.4): `financial_entries`, actions de lançamento manual/atualização/cancelamento, transferências, recorrências, recálculo de saldo e matriz de fluxo de caixa (server-side; sem tela ainda).
+- **Autenticação** (0.7–0.9): login, recuperação de senha e confirmação de e-mail.
+- **Interface base + refino premium** (0.5, 0.10): tokens Tailwind v4, fontes auto-hospedadas (Archivo + IBM Plex Sans + IBM Plex Mono via Bunny), componentes `ui/*` (`button`, `link-button`, `input`, `select`, `card`, `stat-card`, `plate-chip`, `page-header`, `km-gauge`), shell (sidebar + topbar + bottom nav) e dashboard como painel de instrumentos.
+- **Consulta de CNPJ no onboarding** (0.11): `App\Support\Cnpj\*` + `LookupCnpjController`.
+- **Helper de formatação pt-BR** (0.12): `App\Support\Format` (seção 14.3) com alias global para a Blade; `km-gauge` e dashboard já consomem.
+- **Livewire 4, Larastan nível 6 e CI** (0.13): `livewire/livewire` v4 (Alpine embutido, auto-injetado), `larastan/larastan` v3 com `phpstan.neon.dist` nível 6 zerado, e workflow `.github/workflows/ci.yml` (pint + phpstan + phpunit + build).
+
+**Dívidas técnicas abertas** — resolver antes de escalar as telas de dados:
+
+1. **Tipografia divergente da [seção 12.3](#123-tipografia).** O código usa IBM Plex Sans/Mono (alinhado à skill `frotika-ui`), não Inter/JetBrains Mono. Reconciliar: atualizar a 12.3 para IBM Plex (recomendado) ou trocar as fontes no `vite.config.js`.
+2. **`RegisterOwnerAndCompanyRequest::failedValidation` sempre responde JSON 422**, quebrando `@error`/`old()` no fluxo web. Ajustar para redirect com erros quando a requisição não for `expectsJson`.
+3. **CI roda os testes em SQLite `:memory:`** (o `phpunit.xml` fixa isso). A [instrução de testes](../.github/instructions/testes.instructions.md) pede MySQL 8 (json, colunas geradas, CTE recursiva, window functions). Enquanto nenhum teste usa esses recursos, o SQLite basta; ao usar o primeiro, provisionar um serviço MySQL no workflow e ajustar o `phpunit.xml`.
+
+**Sequência recomendada**
+
+1. Persistir endereço/telefone/e-mail do CNPJ no onboarding (ampliar `RegisterOwnerAndCompanyData`, a action e o request; colunas já existem em `companies`).
+2. Concluir a Fase 1: wizard de onboarding, convite de usuários e seletor de empresa.
+3. Fase 2 (Frota): primeira listagem Livewire copiando `frotika-ui/reference/exemplo-lista.blade.php`, já com a `km-gauge` no card do veículo.
 
 ---
 

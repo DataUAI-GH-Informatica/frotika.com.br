@@ -14,6 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property FinancialEntryType $type
+ * @property RecurrenceFrequency $frequency
+ * @property FinancialEntryPaymentMethod|null $payment_method
+ */
 class Recurrence extends Model
 {
     use BelongsToCompany;
@@ -33,16 +38,25 @@ class Recurrence extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<FinancialCategory, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(FinancialCategory::class, 'financial_category_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return HasMany<FinancialEntry, $this>
+     */
     public function entries(): HasMany
     {
         return $this->hasMany(FinancialEntry::class, 'recurrence_id');

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -38,12 +39,18 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /**
+     * @return BelongsToMany<Company, $this>
+     */
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class)
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Group, $this>
+     */
     public function groups(): BelongsToMany
     {
         return $this->belongsToMany(Group::class)
@@ -51,11 +58,17 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function currentCompany(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'current_company_id');
     }
 
+    /**
+     * @return BelongsTo<Group, $this>
+     */
     public function currentGroup(): BelongsTo
     {
         return $this->belongsTo(Group::class, 'current_group_id');

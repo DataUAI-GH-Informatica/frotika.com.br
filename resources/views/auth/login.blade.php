@@ -4,24 +4,21 @@
 
 @section('content')
     <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-start">
-        <section class="relative overflow-hidden rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
-            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50">
-            </div>
-
+        <section class="rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
             <p
                 class="inline-flex items-center rounded-md bg-accent-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent-300">
                 DRE Veicular em minutos
             </p>
             <h1 class="mt-4 font-display text-3xl font-semibold text-white sm:text-4xl">Entrar no painel da empresa</h1>
             <p class="mt-3 max-w-lg text-sm text-brand-100/95 sm:text-base">
-                Receita, custo e resultado por veiculo em um fluxo diario simples para quem toca a operacao.
+                Receita, custo e resultado por veículo em um fluxo diário simples para quem toca a operação.
             </p>
 
-            <x-ui.card class="mt-5 border-brand-700/40 bg-brand-900/50 text-brand-100">
+            <div class="mt-5 rounded-md border border-brand-700/40 bg-brand-900/50 p-4 text-brand-100">
                 <p class="text-sm">
-                    Use o mesmo acesso para lancamentos, fluxo de caixa e DRE veicular.
+                    Use o mesmo acesso para lançamentos, fluxo de caixa e DRE veicular.
                 </p>
-            </x-ui.card>
+            </div>
         </section>
 
         <x-ui.card class="mx-auto w-full max-w-md border-slate-300 bg-white">
@@ -56,7 +53,7 @@
             </form>
 
             <p class="mt-4 text-center text-sm text-slate-600">
-                Ainda nao tem acesso?
+                Ainda não tem acesso?
                 <a href="{{ route('register') }}" class="font-medium text-brand-700 hover:text-brand-800">Criar conta
                     agora</a>
             </p>

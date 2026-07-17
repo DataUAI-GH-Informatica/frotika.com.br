@@ -8,6 +8,7 @@ use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Tenancy\Models\Company;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -31,7 +32,7 @@ Artisan::command('frotika:recalculate-balances {--company=} {--dry-run}', functi
     if ($companies->isEmpty()) {
         $this->error('Nenhuma empresa encontrada para reconciliacao.');
 
-        return self::FAILURE;
+        return Command::FAILURE;
     }
 
     $processedAccounts = 0;
@@ -91,7 +92,7 @@ Artisan::command('frotika:recalculate-balances {--company=} {--dry-run}', functi
         $updatedAccounts,
     ));
 
-    return self::SUCCESS;
+    return Command::SUCCESS;
 })->purpose('Recalcula e reconcilia current_balance_cents das contas bancarias');
 
 Artisan::command('frotika:generate-recurrences {--company=} {--reference-date=} {--dry-run}', function (
@@ -110,7 +111,7 @@ Artisan::command('frotika:generate-recurrences {--company=} {--reference-date=} 
     if ($companies->isEmpty()) {
         $this->error('Nenhuma empresa encontrada para gerar recorrencias.');
 
-        return self::FAILURE;
+        return Command::FAILURE;
     }
 
     $totals = [
@@ -141,7 +142,7 @@ Artisan::command('frotika:generate-recurrences {--company=} {--reference-date=} 
         $totals['entries_created'],
     ));
 
-    return self::SUCCESS;
+    return Command::SUCCESS;
 })->purpose('Gera lancamentos previstos a partir de recorrencias ativas');
 
 Schedule::command('frotika:generate-recurrences')

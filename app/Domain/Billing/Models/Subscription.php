@@ -23,6 +23,9 @@ final class Subscription extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Group, $this>
+     */
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);

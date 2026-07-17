@@ -15,6 +15,27 @@
         $topbarCompanies = $topbarCompanies ?? collect();
         $topbarCurrentCompanyId = $topbarCurrentCompanyId ?? null;
         $topbarCurrentCompanyName = $topbarCurrentCompanyName ?? 'Empresa ativa';
+
+        $navSections = [
+            'Operação' => [
+                ['label' => 'Painel', 'route' => 'dashboard', 'active' => true],
+                ['label' => 'Viagens', 'route' => null],
+                ['label' => 'Abastecimentos', 'route' => null],
+                ['label' => 'Manutenções', 'route' => null],
+            ],
+            'Frota' => [
+                ['label' => 'Veículos', 'route' => null],
+                ['label' => 'Motoristas', 'route' => null],
+            ],
+            'Financeiro' => [
+                ['label' => 'Lançamentos', 'route' => null],
+                ['label' => 'Fluxo de caixa', 'route' => null],
+                ['label' => 'Contas bancárias', 'route' => null],
+            ],
+            'Análise' => [
+                ['label' => 'DRE veicular', 'route' => null],
+            ],
+        ];
     @endphp
 
     <div class="min-h-screen lg:grid lg:grid-cols-[var(--spacing-sidebar)_1fr]">
@@ -28,96 +49,33 @@
                     <span class="font-display text-base font-semibold text-white">Frotika</span>
                 </a>
 
-                <nav class="space-y-4">
-                    <section>
-                        <p class="px-2 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-300">Operacao</p>
-                        <ul class="mt-2 space-y-1">
-                            <li>
-                                <a href="{{ route('dashboard') }}"
-                                    class="block rounded-md border-l-2 border-accent-500 bg-brand-800/70 px-2 py-1.5 text-sm font-medium text-white">
-                                    Painel
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Viagens
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Abastecimentos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Manutencoes
-                                </a>
-                            </li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <p class="px-2 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-300">Frota</p>
-                        <ul class="mt-2 space-y-1">
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Veiculos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Motoristas
-                                </a>
-                            </li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <p class="px-2 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-300">Financeiro
-                        </p>
-                        <ul class="mt-2 space-y-1">
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Lancamentos
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Fluxo de caixa
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    Contas bancarias
-                                </a>
-                            </li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <p class="px-2 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-300">Analise</p>
-                        <ul class="mt-2 space-y-1">
-                            <li>
-                                <a href="#"
-                                    class="block rounded-md px-2 py-1.5 text-sm text-brand-100 hover:bg-brand-800/60">
-                                    DRE veicular
-                                </a>
-                            </li>
-                        </ul>
-                    </section>
+                <nav class="space-y-5">
+                    @foreach ($navSections as $sectionLabel => $items)
+                        <section>
+                            <p class="px-2 text-2xs font-semibold uppercase tracking-[0.18em] text-brand-400">
+                                {{ $sectionLabel }}</p>
+                            <ul class="mt-2 space-y-0.5">
+                                @foreach ($items as $item)
+                                    <li>
+                                        <a href="{{ $item['route'] ? route($item['route']) : '#' }}"
+                                            @class([
+                                                'block rounded-md px-2 py-1.5 text-sm',
+                                                'border-l-[3px] border-accent-500 bg-brand-800 font-medium text-white' => $item['active'] ?? false,
+                                                'text-brand-100 hover:bg-brand-800/60' => !($item['active'] ?? false),
+                                            ])>
+                                            {{ $item['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </section>
+                    @endforeach
                 </nav>
             </div>
 
             <div class="border-t border-brand-800/80 pt-3">
-                <p class="px-2 text-xs text-brand-300">{{ $topbarCurrentCompanyName }}</p>
+                <p class="px-2 text-2xs font-semibold uppercase tracking-[0.14em] text-brand-400">Empresa ativa</p>
+                <p class="px-2 text-sm font-medium text-white">{{ $topbarCurrentCompanyName }}</p>
 
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
@@ -139,49 +97,37 @@
                         <span class="font-display text-sm font-semibold">Frotika</span>
                     </a>
 
-                    <div class="flex min-w-0 flex-1 items-center gap-3">
-                        <div>
-                            <p class="text-2xs font-semibold uppercase tracking-[0.14em] text-slate-500">Empresa ativa
-                            </p>
+                    @if ($topbarCompanies->count() > 1)
+                        <form method="POST" action="{{ route('tenancy.switch-company') }}"
+                            class="hidden items-center gap-2 lg:flex">
+                            @csrf
+                            <select name="company_id"
+                                class="h-9 min-w-56 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                                onchange="this.form.requestSubmit()">
+                                @foreach ($topbarCompanies as $companyOption)
+                                    <option value="{{ $companyOption->getKey() }}" @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
+                                        {{ $companyOption->getAttribute('trade_name') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    @endif
 
-                            @if ($topbarCompanies->count() > 1)
-                                <form method="POST" action="{{ route('tenancy.switch-company') }}"
-                                    class="mt-0.5 flex items-center gap-2">
-                                    @csrf
-                                    <select name="company_id"
-                                        class="h-8 min-w-56 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                                        onchange="this.form.requestSubmit()">
-                                        @foreach ($topbarCompanies as $companyOption)
-                                            <option value="{{ $companyOption->getKey() }}" @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
-                                                {{ $companyOption->getAttribute('trade_name') }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                    <label class="relative ml-auto hidden min-w-72 max-w-md flex-1 items-center md:flex">
+                        <svg class="pointer-events-none absolute left-3 size-4 text-slate-400" viewBox="0 0 20 20"
+                            fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <circle cx="9" cy="9" r="6" />
+                            <path d="m14 14 3.5 3.5" stroke-linecap="round" />
+                        </svg>
+                        <input type="text" placeholder="Placa, motorista, CT-e"
+                            class="h-9 w-full rounded-md border border-slate-300 bg-white pl-9 pr-16 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+                        <span
+                            class="pointer-events-none absolute right-2 rounded border border-slate-300 px-1.5 py-0.5 font-mono text-2xs text-slate-500 tabular">Ctrl+K</span>
+                    </label>
 
-                                    <x-ui.button type="submit" variant="secondary" size="sm" class="sm:hidden">
-                                        Trocar
-                                    </x-ui.button>
-                                </form>
-                            @else
-                                <p class="mt-0.5 text-sm font-semibold text-slate-900">{{ $topbarCurrentCompanyName }}
-                                </p>
-                            @endif
-                        </div>
-
-                        <label class="relative ml-auto hidden min-w-72 flex-1 items-center md:flex">
-                            <span
-                                class="pointer-events-none absolute left-3 text-xs uppercase tracking-widest text-slate-400">Buscar</span>
-                            <input type="text" placeholder="Placa, motorista, CT-e"
-                                class="h-9 w-full rounded-md border border-slate-300 bg-white px-20 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
-                            <span
-                                class="pointer-events-none absolute right-2 rounded border border-slate-300 px-1.5 py-0.5 font-mono text-2xs text-slate-500 tabular">Ctrl+K</span>
-                        </label>
-                    </div>
-
-                    <div class="hidden items-center gap-2 xl:flex">
+                    <div class="hidden items-center gap-1 xl:flex {{ $topbarCompanies->count() > 1 ? '' : 'ml-auto' }}">
                         <x-ui.button variant="ghost" size="sm">+ Viagem</x-ui.button>
                         <x-ui.button variant="ghost" size="sm">+ Abastecimento</x-ui.button>
-                        <x-ui.button variant="ghost" size="sm">+ Manutencao</x-ui.button>
                         <x-ui.button variant="ghost" size="sm">Importar CT-e</x-ui.button>
                     </div>
 
@@ -208,24 +154,50 @@
             <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white lg:hidden safe-b">
                 <div class="grid h-(--spacing-bottomnav) grid-cols-5 px-2">
                     <a href="{{ route('dashboard') }}"
-                        class="flex flex-col items-center justify-center text-2xs font-medium text-brand-700">
-                        <span class="font-mono text-sm">01</span>
-                        Inicio
+                        class="flex flex-col items-center justify-center gap-0.5 text-2xs font-medium text-brand-700">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Início
                     </a>
-                    <a href="#" class="flex flex-col items-center justify-center text-2xs text-slate-500">
-                        <span class="font-mono text-sm">02</span>
+                    <a href="#" class="flex flex-col items-center justify-center gap-0.5 text-2xs text-slate-400">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z" stroke-linejoin="round" />
+                            <circle cx="7" cy="17" r="1.6" />
+                            <circle cx="17.5" cy="17" r="1.6" />
+                        </svg>
                         Viagens
                     </a>
-                    <button type="button" aria-label="Novo lancamento" class="flex items-center justify-center">
+                    <button type="button" aria-label="Novo lançamento" class="flex items-center justify-center">
                         <span
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-700 font-mono text-lg font-semibold text-white">+</span>
+                            class="inline-flex size-10 items-center justify-center rounded-md bg-brand-700 text-white active:bg-brand-800">
+                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+                            </svg>
+                        </span>
                     </button>
-                    <a href="#" class="flex flex-col items-center justify-center text-2xs text-slate-500">
-                        <span class="font-mono text-sm">03</span>
+                    <a href="#" class="flex flex-col items-center justify-center gap-0.5 text-2xs text-slate-400">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <rect x="4" y="4" width="7" height="7" rx="1" />
+                            <rect x="13" y="4" width="7" height="7" rx="1" />
+                            <rect x="4" y="13" width="7" height="7" rx="1" />
+                            <rect x="13" y="13" width="7" height="7" rx="1" />
+                        </svg>
                         Frota
                     </a>
-                    <button type="button" class="flex flex-col items-center justify-center text-2xs text-slate-500">
-                        <span class="font-mono text-sm">04</span>
+                    <button type="button"
+                        class="flex flex-col items-center justify-center gap-0.5 text-2xs text-slate-400">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <circle cx="5" cy="12" r="1.6" />
+                            <circle cx="12" cy="12" r="1.6" />
+                            <circle cx="19" cy="12" r="1.6" />
+                        </svg>
                         Mais
                     </button>
                 </div>

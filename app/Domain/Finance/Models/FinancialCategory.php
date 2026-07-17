@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property FinancialCategoryType|null $type
+ * @property FinancialCategoryDreGroup|null $dre_group
+ * @property FinancialCategoryAllocation|null $allocation
+ */
 class FinancialCategory extends Model
 {
     use BelongsToCompany;
@@ -32,11 +37,17 @@ class FinancialCategory extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<FinancialCategory, $this>
+     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    /**
+     * @return HasMany<FinancialCategory, $this>
+     */
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
