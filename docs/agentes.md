@@ -9,6 +9,7 @@
 | `.github/instructions/*.instructions.md` | sim, por `applyTo` | não |
 | `.github/agents/*.agent.md` | sim | não |
 | `.github/prompts/*.prompt.md` | sim | não |
+| `.github/skills/*/SKILL.md` | sim, sob demanda | parcial — padrão aberto, confirme na sua versão |
 | `.vscode/settings.json` | sim | não |
 
 Por isso o **`AGENTS.md` é a fonte canônica** e o `copilot-instructions.md` é só um ponteiro para ele. Tudo que for inegociável mora no `AGENTS.md`, para chegar em qualquer agente. Os `.instructions.md` são camada extra de detalhe, aplicada por caminho de arquivo — quando o agente é o Copilot, ela entra sozinha; quando é o Codex, o conteúdo essencial já está no `AGENTS.md`.
@@ -37,3 +38,15 @@ Se uma instrução parece não estar sendo aplicada:
 - `@Planejador`, `@Revisor` — agentes deste projeto.
 
 Referência: https://code.visualstudio.com/docs/agent-customization/custom-instructions
+
+## A skill de UI
+
+`.github/skills/frotika-ui/` é a especificação de design. Skill, e não instruction, por três motivos:
+
+- **Carrega sob demanda.** 800 linhas de design não entram no contexto quando você está mexendo em migration.
+- **Carrega recursos.** Instruction é só texto; skill leva `tokens.css` e as páginas de referência junto.
+- **É padrão aberto** (agentskills.io), portátil entre agentes.
+
+O `name` no frontmatter tem que bater com o nome da pasta, minúsculo e com hífen. Se não bater, a skill não carrega — e falha em silêncio.
+
+Chame com `/frotika-ui`, ou deixe o agente carregar sozinho pela descrição.

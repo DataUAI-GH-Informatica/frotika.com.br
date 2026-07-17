@@ -1,0 +1,114 @@
+/* Frotika — resources/css/app.css
+ * Copie este arquivo inteiro. Não escreva hex fora daqui. */
+
+@import "tailwindcss";
+
+@theme {
+  /* ---- Marca -------------------------------------------------------------
+   * Derivada de #002573 = hsl(220.7, 100%, 22.5%). Matiz e saturação fixos,
+   * só a luminosidade varia. A marca é a 900: cor escura, logo ela ancora
+   * ESTRUTURA (sidebar, cabeçalho, logo). O botão primário é a 700, que
+   * mantém o parentesco com contraste utilizável em superfície clicável. */
+  --color-brand-50:  #E6EEFF;
+  --color-brand-100: #CCDCFF;
+  --color-brand-200: #A3C1FF;
+  --color-brand-300: #709EFF;
+  --color-brand-400: #3D7CFF;
+  --color-brand-500: #0A59FF;   /* anel de foco */
+  --color-brand-600: #0048E0;   /* hover do primário */
+  --color-brand-700: #0039B2;   /* botão primário, link */
+  --color-brand-800: #002E8F;   /* pressed */
+  --color-brand-900: #002573;   /* A MARCA */
+  --color-brand-950: #001747;
+
+  /* ---- Acento — âmbar de sinalização -------------------------------------
+   * Complementar da marca. Significa "olhe aqui", NÃO significa aviso.
+   * Aviso é --color-warning. Um acento por tela, no máximo. */
+  --color-accent-50:  #FFF8E6;
+  --color-accent-100: #FFEDBF;
+  --color-accent-300: #FFCF52;
+  --color-accent-500: #FFAD00;
+  --color-accent-600: #DB8F00;
+  --color-accent-700: #A86B00;
+
+  /* ---- Semânticos — só quando codificam um fato --------------------------
+   * Tela de frota saudável é quase monocromática. Se tem cor, tem problema. */
+  --color-success-50:  #ECFDF5;
+  --color-success-500: #059669;
+  --color-success-700: #047857;
+  --color-warning-50:  #FFFBEB;
+  --color-warning-500: #D97706;
+  --color-warning-700: #B45309;
+  --color-danger-50:   #FEF2F2;
+  --color-danger-500:  #DC2626;
+  --color-danger-700:  #B91C1C;
+  --color-info-50:     #F0F9FF;
+  --color-info-500:    #0284C7;
+  --color-info-700:    #0369A1;
+
+  /* ---- Tipografia --------------------------------------------------------
+   * Plex Sans e Plex Mono compartilham esqueleto: o mesmo valor num card e
+   * numa tabela lê como o mesmo objeto. Archivo é grotesca de sinalização,
+   * usada SÓ em título de página, valor de card e cabeçalho do DRE. */
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace;
+
+  --text-2xs:  0.6875rem;  /* 11 — rótulo de seção, unidade */
+  --text-xs:   0.75rem;    /* 12 — meta, legenda */
+  --text-sm:   0.875rem;   /* 14 — BASE DA UI */
+  --text-base: 1rem;       /* 16 — input mobile (abaixo disso o iOS dá zoom) */
+  --text-lg:   1.25rem;    /* 20 — título de seção */
+  --text-xl:   1.75rem;    /* 28 — título de página */
+  --text-2xl:  2.5rem;     /* 40 — valor de card, número do DRE */
+
+  /* ---- Raio — teto de 8px -----------------------------------------------
+   * rounded-xl / 2xl / full são proibidos (exceto avatar e badge pill).
+   * Célula de tabela é rounded-none. */
+  --radius-md: 0.375rem;   /* 6 — interativo */
+  --radius-lg: 0.5rem;     /* 8 — superfície */
+
+  /* ---- Sombra — só overlay que flutua de verdade -------------------------
+   * Card NÃO tem sombra. Elevação é border 1px + degrau de fundo. */
+  --shadow-overlay: 0 8px 24px -4px rgb(15 23 42 / 0.16), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+
+  /* ---- Layout ------------------------------------------------------------ */
+  --spacing-sidebar:            16.5rem;  /* 264 expandida */
+  --spacing-sidebar-collapsed:   4.5rem;  /*  72 recolhida */
+  --spacing-topbar:              4rem;    /*  64 */
+  --spacing-bottomnav:           3.5rem;  /*  56 mobile */
+  --spacing-row:                 2.25rem; /*  36 linha de tabela no DESKTOP (padrão) */
+  --spacing-row-touch:           2.75rem; /*  44 linha em touch/tablet */
+  --spacing-touch:               2.75rem; /*  44 alvo de toque mínimo — só em touch */
+  --spacing-touch-lg:            3rem;    /*  48 alvo preferido */
+}
+
+@layer base {
+  /* Todo número usa isto. Sem tabular-nums a coluna de valores não é lida,
+     é decifrada. */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  /* Rodapé fixo do mobile respeita a barra de gestos do iOS. */
+  .safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+
+  /* O usuário está com a mão suja de diesel. Sem seleção acidental na nav. */
+  .no-select { -webkit-user-select: none; user-select: none; }
+}
+
+@layer components {
+  /* Unidade e símbolo de moeda são secundários ao número. */
+  .unit { @apply text-[0.85em] text-slate-400 font-normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -57,6 +57,20 @@ Cada regra abaixo tem um motivo. Violar qualquer uma delas produz número errado
 - Formatação pt-BR só via `App\Support\Format` (`Format::money`, `Format::plate`, `Format::km`...). Nunca `number_format` solto.
 - Glossário pt-BR ↔ código: seção 17 do blueprint. `cavalo` = `VehicleType::Tractor`, `carreta` = `SemiTrailer`, `viagem` = `Trip`, `abastecimento` = `Fueling`, `lançamento` = `FinancialEntry`.
 
+## Interface
+
+Trabalho de UI **exige** carregar a skill `.github/skills/frotika-ui/`. Ela tem a direção visual, os tokens exatos, a anatomia dos componentes, a especificação mobile e o processo de crítica.
+
+A tese: **painel de instrumentos, não dashboard.** A referência é a cabine do caminhão e a ficha da oficina — densidade alta, filete em vez de sombra, número grande, zero ornamento. Se a tela pudesse ser o admin de um e-commerce trocando as palavras, está errada.
+
+**O uso principal é desktop** — é lá que se concilia, importa, audita e decide. Otimize para o milésimo clique, não para o primeiro. Mobile é o complemento: o motorista lançando no posto.
+
+Não negociável: zero sombra fora de overlay · raio máximo 8px · **linha de tabela 36px no desktop** (44 é alvo de toque, não medida de tela; meta dura ≥16 linhas em 1440×900) · todo número `font-mono tabular text-right` · cor só quando codifica um fato · um acento por tela · nunca hex na Blade.
+
+**A tabela é o produto.** 80% do tempo de tela é nela: cabeçalho sticky, ordenação por clique, seleção em lote, edição inline, teclado, totais sticky. Clicar na linha abre **master-detail** de 480px — a lista encolhe, não some. Auditar 20 lançamentos não pode custar 40 navegações.
+
+**Mobile é IA diferente, não media query:** bottom nav, ação no polegar, tabela vira card, input de 16px. Toda tela é planejada nos dois tamanhos antes de existir.
+
 ## Estrutura
 
 ```

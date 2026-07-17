@@ -12,13 +12,10 @@ export default defineConfig({
                 bunny("Archivo", {
                     weights: [500, 600, 700],
                 }),
-                bunny("Inter", {
+                bunny("IBM Plex Sans", {
                     weights: [400, 500, 600, 700],
                 }),
-                bunny("JetBrains Mono", {
-                    weights: [400, 500, 600],
-                }),
-                bunny("Instrument Sans", {
+                bunny("IBM Plex Mono", {
                     weights: [400, 500, 600],
                 }),
             ],

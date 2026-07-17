@@ -14,9 +14,9 @@
     $valueAttribute = $type === 'password' ? null : old($name, $value);
 
     $inputBaseClasses =
-        'mt-2 block w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400';
+        'mt-1.5 block h-11 w-full rounded-md border bg-white px-3 text-base text-slate-900 transition-colors placeholder:text-slate-400 sm:h-9 sm:text-sm';
     $inputStateClasses = $hasError
-        ? 'border-danger-700 focus:border-danger-700 focus:ring-2 focus:ring-danger-700/20'
+        ? 'border-danger-700 focus:border-danger-700 focus:ring-2 focus:ring-danger-500/20'
         : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20';
 @endphp
 
