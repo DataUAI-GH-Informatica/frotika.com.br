@@ -1,7 +1,4 @@
-@props([
-    'plate',
-    'type' => null,
-])
+@props(['plate', 'type' => null])
 
 @php
     $plateValue = strtoupper((string) $plate);

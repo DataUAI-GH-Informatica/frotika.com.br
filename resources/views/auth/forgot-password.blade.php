@@ -5,7 +5,8 @@
 @section('content')
     <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-start">
         <section class="relative overflow-hidden rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
-            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50"></div>
+            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50">
+            </div>
 
             <p
                 class="inline-flex items-center rounded-md bg-accent-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent-300">
@@ -34,7 +35,8 @@
 
             <p class="mt-4 text-center text-sm text-slate-600">
                 Lembrou da senha?
-                <a href="{{ route('login') }}" class="font-medium text-brand-700 hover:text-brand-800">Voltar para entrar</a>
+                <a href="{{ route('login') }}" class="font-medium text-brand-700 hover:text-brand-800">Voltar para
+                    entrar</a>
             </p>
         </x-ui.card>
     </div>

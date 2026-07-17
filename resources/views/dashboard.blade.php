@@ -31,34 +31,47 @@
                 <table class="w-full text-sm">
                     <thead class="sticky top-0 z-10 border-b border-slate-200 bg-slate-50">
                         <tr class="h-9">
-                            <th class="px-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Placa</th>
-                            <th class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">R$/km</th>
-                            <th class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Custo/km</th>
-                            <th class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">km/l</th>
-                            <th class="w-32 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Resultado</th>
+                            <th class="px-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                Placa</th>
+                            <th
+                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                R$/km</th>
+                            <th
+                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                Custo/km</th>
+                            <th
+                                class="w-28 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                km/l</th>
+                            <th
+                                class="w-32 px-3 text-right text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                Resultado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="h-9 cursor-pointer border-b border-slate-100 bg-brand-50 shadow-[inset_2px_0_0_0_var(--color-brand-700)]">
+                        <tr
+                            class="h-9 cursor-pointer border-b border-slate-100 bg-brand-50 shadow-[inset_2px_0_0_0_var(--color-brand-700)]">
                             <td class="px-3"><x-ui.plate-chip plate="RIO2A18" type="tractor" /></td>
                             <td class="px-3 text-right font-mono tabular text-slate-900">4,37</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">3,95</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">2,43</td>
-                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span> 2.120,00</td>
+                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span>
+                                2.120,00</td>
                         </tr>
                         <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-3"><x-ui.plate-chip plate="MGA4F21" type="tractor" /></td>
                             <td class="px-3 text-right font-mono tabular text-slate-900">4,90</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">3,80</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">3,02</td>
-                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span> 7.580,00</td>
+                            <td class="px-3 text-right font-mono tabular text-success-700"><span class="unit">R$</span>
+                                7.580,00</td>
                         </tr>
                         <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-3"><x-ui.plate-chip plate="BRA2E19" type="semi_trailer" /></td>
                             <td class="px-3 text-right font-mono tabular text-slate-900">3,12</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">3,44</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">2,11</td>
-                            <td class="px-3 text-right font-mono tabular text-danger-700">-<span class="unit">R$</span> 2.596,00</td>
+                            <td class="px-3 text-right font-mono tabular text-danger-700">-<span class="unit">R$</span>
+                                2.596,00</td>
                         </tr>
                     </tbody>
                     <tfoot class="sticky bottom-0 border-t border-slate-300 bg-slate-50">
@@ -67,7 +80,8 @@
                             <td class="px-3 text-right font-mono tabular text-slate-900">4,13</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">3,73</td>
                             <td class="px-3 text-right font-mono tabular text-slate-700">2,52</td>
-                            <td class="px-3 text-right font-mono tabular text-slate-900"><span class="unit">R$</span> 2.368,00</td>
+                            <td class="px-3 text-right font-mono tabular text-slate-900"><span class="unit">R$</span>
+                                2.368,00</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -122,7 +136,8 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <dt class="font-medium text-slate-700">Resultado liquido</dt>
-                    <dd class="font-mono tabular font-semibold text-success-700"><span class="unit">R$</span> 2.120,00</dd>
+                    <dd class="font-mono tabular font-semibold text-success-700"><span class="unit">R$</span> 2.120,00
+                    </dd>
                 </div>
             </dl>
         </x-ui.card>

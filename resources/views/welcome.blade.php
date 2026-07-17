@@ -5,8 +5,10 @@
 @section('content')
     <section class="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-stretch">
         <div class="relative overflow-hidden rounded-lg border border-brand-800 bg-brand-950 p-6 sm:p-8">
-            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50"></div>
-            <div class="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-lg border border-brand-800/60"></div>
+            <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-lg border border-brand-700/50">
+            </div>
+            <div class="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-lg border border-brand-800/60">
+            </div>
 
             <p
                 class="inline-flex items-center rounded-md bg-accent-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent-300">

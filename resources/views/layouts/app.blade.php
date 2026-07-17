@@ -21,7 +21,8 @@
         <aside
             class="hidden lg:flex lg:flex-col lg:justify-between lg:bg-linear-to-b lg:from-brand-950 lg:to-brand-900 lg:px-3 lg:py-4 lg:text-brand-100">
             <div class="space-y-6">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-brand-800/60">
+                <a href="{{ route('dashboard') }}"
+                    class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-brand-800/60">
                     <span
                         class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-accent-500 font-display text-sm font-semibold text-brand-950">F</span>
                     <span class="font-display text-base font-semibold text-white">Frotika</span>
@@ -133,25 +134,25 @@
                 <div class="flex h-(--spacing-topbar) items-center gap-3 px-4 sm:px-6">
                     <a href="{{ route('dashboard') }}"
                         class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-brand-900 hover:bg-slate-100 lg:hidden">
-                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-900 text-xs font-semibold text-white">F</span>
+                        <span
+                            class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-900 text-xs font-semibold text-white">F</span>
                         <span class="font-display text-sm font-semibold">Frotika</span>
                     </a>
 
                     <div class="flex min-w-0 flex-1 items-center gap-3">
                         <div>
-                            <p class="text-2xs font-semibold uppercase tracking-[0.14em] text-slate-500">Empresa ativa</p>
+                            <p class="text-2xs font-semibold uppercase tracking-[0.14em] text-slate-500">Empresa ativa
+                            </p>
 
                             @if ($topbarCompanies->count() > 1)
                                 <form method="POST" action="{{ route('tenancy.switch-company') }}"
                                     class="mt-0.5 flex items-center gap-2">
                                     @csrf
-                                    <select
-                                        name="company_id"
+                                    <select name="company_id"
                                         class="h-8 min-w-56 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                                         onchange="this.form.requestSubmit()">
                                         @foreach ($topbarCompanies as $companyOption)
-                                            <option value="{{ $companyOption->getKey() }}"
-                                                @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
+                                            <option value="{{ $companyOption->getKey() }}" @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
                                                 {{ $companyOption->getAttribute('trade_name') }}
                                             </option>
                                         @endforeach
@@ -162,12 +163,14 @@
                                     </x-ui.button>
                                 </form>
                             @else
-                                <p class="mt-0.5 text-sm font-semibold text-slate-900">{{ $topbarCurrentCompanyName }}</p>
+                                <p class="mt-0.5 text-sm font-semibold text-slate-900">{{ $topbarCurrentCompanyName }}
+                                </p>
                             @endif
                         </div>
 
                         <label class="relative ml-auto hidden min-w-72 flex-1 items-center md:flex">
-                            <span class="pointer-events-none absolute left-3 text-xs uppercase tracking-widest text-slate-400">Buscar</span>
+                            <span
+                                class="pointer-events-none absolute left-3 text-xs uppercase tracking-widest text-slate-400">Buscar</span>
                             <input type="text" placeholder="Placa, motorista, CT-e"
                                 class="h-9 w-full rounded-md border border-slate-300 bg-white px-20 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
                             <span
@@ -191,7 +194,8 @@
 
             <main class="flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-6 lg:pb-6">
                 @if (session('status'))
-                    <div class="mb-4 rounded-md border border-success-500/40 bg-success-50 px-4 py-2.5 text-sm font-medium text-success-700">
+                    <div
+                        class="mb-4 rounded-md border border-success-500/40 bg-success-50 px-4 py-2.5 text-sm font-medium text-success-700">
                         {{ session('status') }}
                     </div>
                 @endif

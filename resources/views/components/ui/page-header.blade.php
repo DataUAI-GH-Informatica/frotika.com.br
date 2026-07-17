@@ -1,7 +1,4 @@
-@props([
-    'title',
-    'subtitle' => null,
-])
+@props(['title', 'subtitle' => null])
 
 <div class="mb-4 border-b border-slate-200 pb-3">
     <div class="flex flex-wrap items-start justify-between gap-3">

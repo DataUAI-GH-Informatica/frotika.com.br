@@ -1,8 +1,4 @@
-@props([
-    'name',
-    'label' => null,
-    'required' => false,
-])
+@props(['name', 'label' => null, 'required' => false])
 
 @php
     $selectId = $attributes->get('id', $name);

@@ -1,18 +1,14 @@
-@props([
-    'label',
-    'value',
-    'tone' => 'default',
-    'hint' => null,
-])
+@props(['label', 'value', 'tone' => 'default', 'hint' => null])
 
 @php
-    $valueToneClasses = [
-        'default' => 'text-slate-900',
-        'success' => 'text-success-700',
-        'danger' => 'text-danger-700',
-        'info' => 'text-info-700',
-        'warning' => 'text-warning-700',
-    ][$tone] ?? 'text-slate-900';
+    $valueToneClasses =
+        [
+            'default' => 'text-slate-900',
+            'success' => 'text-success-700',
+            'danger' => 'text-danger-700',
+            'info' => 'text-info-700',
+            'warning' => 'text-warning-700',
+        ][$tone] ?? 'text-slate-900';
 @endphp
 
 <x-ui.card class="h-full">
