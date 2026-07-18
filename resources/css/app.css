@@ -6,24 +6,29 @@
 @source '../**/*.php';
 
 @theme {
-    --color-brand-50: #e6eeff;
-    --color-brand-100: #ccdcff;
-    --color-brand-200: #a3c1ff;
-    --color-brand-300: #709eff;
-    --color-brand-400: #3d7cff;
-    --color-brand-500: #0a59ff;
-    --color-brand-600: #0048e0;
-    --color-brand-700: #0039b2;
-    --color-brand-800: #002e8f;
-    --color-brand-900: #002573;
-    --color-brand-950: #001747;
+    /* Marca — ancorada no navy da logo (#1a2536 = a 900). Mesma matiz (~216°),
+     * só a luminosidade varia. A 900 é a MARCA (sidebar, cabeçalho, logo); a
+     * 700 é o botão/link primário, com parentesco e contraste em superfície. */
+    --color-brand-50: #f2f5f9;
+    --color-brand-100: #e3e8f0;
+    --color-brand-200: #c6d0de;
+    --color-brand-300: #9dabc2;
+    --color-brand-400: #6d7f9c;
+    --color-brand-500: #4a5c7c;
+    --color-brand-600: #364764;
+    --color-brand-700: #283850;
+    --color-brand-800: #1f2b42;
+    --color-brand-900: #1a2536;
+    --color-brand-950: #10151f;
 
+    /* Acento — amarelo da logo (#fdb80f = a 500). Significa "olhe aqui",
+     * não é aviso. Um acento por tela, no máximo. */
     --color-accent-50: #fff8e6;
-    --color-accent-100: #ffedbf;
-    --color-accent-300: #ffcf52;
-    --color-accent-500: #ffad00;
-    --color-accent-600: #db8f00;
-    --color-accent-700: #a86b00;
+    --color-accent-100: #fdeab8;
+    --color-accent-300: #fdd45c;
+    --color-accent-500: #fdb80f;
+    --color-accent-600: #d99806;
+    --color-accent-700: #a8720a;
 
     --color-success-50: #ecfdf5;
     --color-success-500: #059669;

@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@yield('title', 'Painel | Frotika')</title>
+    <link rel="icon" type="image/png" href="{{ asset('icone-frotika.png') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('icone-frotika.png') }}" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
@@ -64,10 +66,8 @@
             class="hidden lg:flex lg:flex-col lg:justify-between lg:bg-linear-to-b lg:from-brand-950 lg:to-brand-900 lg:px-3 lg:py-4 lg:text-brand-100">
             <div class="space-y-6">
                 <a href="{{ route('dashboard') }}"
-                    class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-brand-800/60">
-                    <span
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-accent-500 font-display text-sm font-semibold text-brand-950">F</span>
-                    <span class="font-display text-base font-semibold text-white">Frotika</span>
+                    class="inline-flex rounded-md px-2 py-1.5 hover:bg-brand-800/60">
+                    <x-ui.brand on="dark" />
                 </a>
 
                 <nav class="space-y-5">
@@ -121,10 +121,8 @@
             <header class="sticky top-0 z-20 border-b border-slate-200 bg-white safe-t">
                 <div class="flex h-(--spacing-topbar) items-center gap-3 px-4 sm:px-6">
                     <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-brand-900 hover:bg-slate-100 lg:hidden">
-                        <span
-                            class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-900 text-xs font-semibold text-white">F</span>
-                        <span class="font-display text-sm font-semibold">Frotika</span>
+                        class="inline-flex rounded-md px-2 py-1.5 hover:bg-slate-100 lg:hidden">
+                        <x-ui.brand on="light" size="sm" />
                     </a>
 
                     @if ($topbarCompanies->count() > 1)

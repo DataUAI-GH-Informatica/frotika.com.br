@@ -23,6 +23,7 @@
         </section>
 
         <x-ui.card class="border-slate-300 bg-white">
+            <img src="{{ asset('assets/logo-frotika.png') }}" alt="Frotika" class="mb-5 h-14 w-auto" />
             <h2 class="font-display text-xl font-semibold text-slate-900">Criar conta da transportadora</h2>
             <p class="mt-2 text-sm text-slate-600">Preencha os dados abaixo para liberar o painel.</p>
 

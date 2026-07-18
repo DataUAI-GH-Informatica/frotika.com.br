@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@yield('title', 'Administração | Frotika')</title>
+    <link rel="icon" type="image/png" href="{{ asset('icone-frotika.png') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('icone-frotika.png') }}" />
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
@@ -15,9 +17,7 @@
         <header class="sticky top-0 z-20 border-b border-slate-200 bg-brand-950 text-brand-100">
             <div class="flex h-14 items-center gap-3 px-4 sm:px-6">
                 <a href="{{ route('platform.groups.index') }}" class="inline-flex items-center gap-2">
-                    <span
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-accent-500 font-display text-sm font-semibold text-brand-950">F</span>
-                    <span class="font-display text-base font-semibold text-white">Frotika</span>
+                    <x-ui.brand on="dark" />
                     <span class="rounded-full border border-accent-500/50 bg-accent-500/10 px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest text-accent-300">
                         Plataforma
                     </span>

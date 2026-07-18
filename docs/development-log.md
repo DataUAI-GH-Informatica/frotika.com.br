@@ -610,3 +610,19 @@ Decisao de escopo do usuario: o sistema **nao** tera composicao de veiculos (eng
 ### Validacoes da etapa 0.28
 
 - Mudanca documental (blueprint + ADR); sem alteracao de codigo/testes.
+
+## 2026-07-18 - Etapa 0.29 (identidade visual: logo, favicon e cores da marca)
+
+O usuario adicionou os assets oficiais (`public/assets/logo-frotika.png` e `public/icone-frotika.png`, ambos PNG transparente) e as cores da logo: navy `#1a2536` (principal) e amarelo `#fdb80f` (secundaria). Reancorei o tema nessas cores e passei a usar os assets reais na marca.
+
+### Entregas da etapa 0.29
+
+- **Tokens de cor** (`resources/css/app.css` + skill `reference/tokens.css`): paleta `brand` reancorada no navy `#1a2536` (a 900; matiz ~216, so a luminosidade varia; 700 `#283850` = botao/link) e `accent` reancorada no amarelo `#fdb80f` (a 500). Semanticos, tipografia e layout inalterados. SKILL.md atualizado para citar as novas bases.
+- **Componente `x-ui.brand`**: marca reutilizavel com prop `on` (`dark` = fundo escuro -> icone em chip branco + wordmark branco, pois o wordmark navy sumiria; `light` = icone direto + wordmark navy), `size` e `wordmark`. Fonte unica da marca no app.
+- **Aplicacao nos layouts**: sidebar e topbar mobile do app, header do site (guest) e header da plataforma passam a usar `x-ui.brand` no lugar do antigo quadradinho "F". Logo completo (versao empilhada com tagline) no topo dos cards claros de login e cadastro.
+- **Favicon**: `<link rel="icon">` + `apple-touch-icon` apontando para `icone-frotika.png` nos tres layouts (app, guest, plataforma).
+
+### Validacoes da etapa 0.29
+
+- `npm run build`
+- Sem hex fixo em Blade (regra do design system mantida); cores so via tokens.

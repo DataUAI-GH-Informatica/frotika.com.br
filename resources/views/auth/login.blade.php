@@ -22,6 +22,8 @@
         </section>
 
         <x-ui.card class="mx-auto w-full max-w-md border-slate-300 bg-white">
+            <img src="{{ asset('assets/logo-frotika.png') }}" alt="Frotika"
+                class="mx-auto mb-6 h-20 w-auto" />
             <h2 class="font-display text-xl font-semibold text-slate-900">Acesso da empresa</h2>
             <p class="mt-2 text-sm text-slate-600">Use seu e-mail e senha para abrir o painel.</p>
 

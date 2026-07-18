@@ -65,7 +65,7 @@ Fonte da verdade: [reference/tokens.css](./reference/tokens.css). Copie inteiro 
 
 ### Cor
 
-`brand` (âncora estrutural, base `brand-900` = `#002573`) · `accent` (âmbar de sinalização) · `success` `warning` `danger` `info` (semânticos) · `slate` (neutros).
+`brand` (âncora estrutural, base `brand-900` = `#1a2536`, o navy da logo) · `accent` (amarelo da logo `#fdb80f`, sinalização) · `success` `warning` `danger` `info` (semânticos) · `slate` (neutros).
 
 - App bg `slate-50` → superfície `white` → inset `slate-50` → borda `slate-200`.
 - Texto: `slate-900` principal · `slate-600` secundário · `slate-400` terciário e unidades.

@@ -5,31 +5,31 @@
 
 @theme {
   /* ---- Marca -------------------------------------------------------------
-   * Derivada de #002573 = hsl(220.7, 100%, 22.5%). Matiz e saturação fixos,
+   * Navy da logo: #1A2536 = hsl(216, 35%, 16%). Matiz e saturação ~fixos,
    * só a luminosidade varia. A marca é a 900: cor escura, logo ela ancora
    * ESTRUTURA (sidebar, cabeçalho, logo). O botão primário é a 700, que
    * mantém o parentesco com contraste utilizável em superfície clicável. */
-  --color-brand-50:  #E6EEFF;
-  --color-brand-100: #CCDCFF;
-  --color-brand-200: #A3C1FF;
-  --color-brand-300: #709EFF;
-  --color-brand-400: #3D7CFF;
-  --color-brand-500: #0A59FF;   /* anel de foco */
-  --color-brand-600: #0048E0;   /* hover do primário */
-  --color-brand-700: #0039B2;   /* botão primário, link */
-  --color-brand-800: #002E8F;   /* pressed */
-  --color-brand-900: #002573;   /* A MARCA */
-  --color-brand-950: #001747;
+  --color-brand-50:  #F2F5F9;
+  --color-brand-100: #E3E8F0;
+  --color-brand-200: #C6D0DE;
+  --color-brand-300: #9DABC2;
+  --color-brand-400: #6D7F9C;
+  --color-brand-500: #4A5C7C;   /* anel de foco */
+  --color-brand-600: #364764;   /* hover do primário */
+  --color-brand-700: #283850;   /* botão primário, link */
+  --color-brand-800: #1F2B42;   /* pressed */
+  --color-brand-900: #1A2536;   /* A MARCA */
+  --color-brand-950: #10151F;
 
-  /* ---- Acento — âmbar de sinalização -------------------------------------
-   * Complementar da marca. Significa "olhe aqui", NÃO significa aviso.
-   * Aviso é --color-warning. Um acento por tela, no máximo. */
+  /* ---- Acento — amarelo da logo ------------------------------------------
+   * #FDB80F. Significa "olhe aqui", NÃO significa aviso. Aviso é
+   * --color-warning. Um acento por tela, no máximo. */
   --color-accent-50:  #FFF8E6;
-  --color-accent-100: #FFEDBF;
-  --color-accent-300: #FFCF52;
-  --color-accent-500: #FFAD00;
-  --color-accent-600: #DB8F00;
-  --color-accent-700: #A86B00;
+  --color-accent-100: #FDEAB8;
+  --color-accent-300: #FDD45C;
+  --color-accent-500: #FDB80F;
+  --color-accent-600: #D99806;
+  --color-accent-700: #A8720A;
 
   /* ---- Semânticos — só quando codificam um fato --------------------------
    * Tela de frota saudável é quase monocromática. Se tem cor, tem problema. */
