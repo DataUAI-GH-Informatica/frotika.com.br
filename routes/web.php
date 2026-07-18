@@ -41,6 +41,13 @@ use App\Http\Controllers\Fuelings\ShowEditFuelingController;
 use App\Http\Controllers\Fuelings\ShowFuelingController;
 use App\Http\Controllers\Fuelings\StoreFuelingController;
 use App\Http\Controllers\Fuelings\UpdateFuelingController;
+use App\Http\Controllers\Maintenances\DeleteMaintenanceController;
+use App\Http\Controllers\Maintenances\ListMaintenancesController;
+use App\Http\Controllers\Maintenances\ShowCreateMaintenanceController;
+use App\Http\Controllers\Maintenances\ShowEditMaintenanceController;
+use App\Http\Controllers\Maintenances\ShowMaintenanceController;
+use App\Http\Controllers\Maintenances\StoreMaintenanceController;
+use App\Http\Controllers\Maintenances\UpdateMaintenanceController;
 use App\Http\Controllers\Partners\DeactivateBusinessPartnerController;
 use App\Http\Controllers\Partners\ListBusinessPartnersController;
 use App\Http\Controllers\Partners\ShowBusinessPartnerController;
@@ -208,6 +215,22 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/abastecimentos/{fueling}', DeleteFuelingController::class)
             ->whereNumber('fueling')
             ->name('fuelings.destroy');
+
+        Route::get('/manutencoes', ListMaintenancesController::class)->name('maintenances.index');
+        Route::get('/manutencoes/nova', ShowCreateMaintenanceController::class)->name('maintenances.create');
+        Route::post('/manutencoes', StoreMaintenanceController::class)->name('maintenances.store');
+        Route::get('/manutencoes/{maintenance}', ShowMaintenanceController::class)
+            ->whereNumber('maintenance')
+            ->name('maintenances.show');
+        Route::get('/manutencoes/{maintenance}/editar', ShowEditMaintenanceController::class)
+            ->whereNumber('maintenance')
+            ->name('maintenances.edit');
+        Route::put('/manutencoes/{maintenance}', UpdateMaintenanceController::class)
+            ->whereNumber('maintenance')
+            ->name('maintenances.update');
+        Route::delete('/manutencoes/{maintenance}', DeleteMaintenanceController::class)
+            ->whereNumber('maintenance')
+            ->name('maintenances.destroy');
 
         Route::get('/ct-e', ListCteController::class)->name('cte.index');
         Route::get('/ct-e/importar', ShowImportCteController::class)->name('cte.import');

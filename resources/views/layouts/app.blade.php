@@ -34,7 +34,7 @@
                 ['label' => 'Painel', 'route' => 'dashboard', 'active' => 'dashboard'],
                 ['label' => 'CT-e', 'route' => 'cte.index', 'active' => 'cte.*'],
                 ['label' => 'Abastecimentos', 'route' => 'fuelings.index', 'active' => 'fuelings.*'],
-                ['label' => 'Manutenções', 'route' => null],
+                ['label' => 'Manutenções', 'route' => 'maintenances.index', 'active' => 'maintenances.*'],
             ],
             'Frota' => [
                 ['label' => 'Veículos', 'route' => 'vehicles.index', 'active' => 'vehicles.*'],

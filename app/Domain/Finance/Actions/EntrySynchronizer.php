@@ -11,6 +11,8 @@ use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Fuelings\Enums\FuelProduct;
 use App\Domain\Fuelings\Models\Fueling;
+use App\Domain\Maintenances\Enums\MaintenanceStatus;
+use App\Domain\Maintenances\Models\Maintenance;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
 use App\Domain\Trips\Enums\CteStatus;
@@ -37,6 +39,11 @@ final class EntrySynchronizer
     private const ARLA_COST_CODE = '3.2';
 
     private const OIL_COST_CODE = '3.6';
+
+    /** Manutenção corretiva (variável) e preventiva (fixo) — blueprint 6.3. */
+    private const MAINTENANCE_CORRECTIVE_CODE = '3.4';
+
+    private const MAINTENANCE_PREVENTIVE_CODE = '4.3';
 
     public function __construct(
         private readonly TenantContext $tenant,
@@ -234,6 +241,132 @@ final class EntrySynchronizer
 
             $this->recalculateAccounts($company, $accountsToRecalculate);
         });
+    }
+
+    /**
+     * Manutenção vira despesa prevista a pagar (blueprint 6.3: paid_at nulo, o
+     * usuário informa a baixa depois). Categoria 4.3 (preventiva) ou 3.4
+     * (demais). Competência = fechamento, ou abertura se ainda não fechou.
+     */
+    public function syncFromMaintenance(Maintenance $maintenance): void
+    {
+        $company = Company::query()->find($maintenance->getAttribute('company_id'));
+
+        if (! $company instanceof Company) {
+            return;
+        }
+
+        $this->tenant->runFor($company, function () use ($maintenance, $company): void {
+            $existing = FinancialEntry::query()
+                ->where('sourceable_type', Maintenance::class)
+                ->where('sourceable_id', $maintenance->getKey())
+                ->first();
+
+            $shouldCancel = $maintenance->trashed() || $maintenance->status === MaintenanceStatus::Canceled;
+
+            if ($shouldCancel) {
+                if ($existing instanceof FinancialEntry && $existing->status !== FinancialEntryStatus::Canceled) {
+                    $existing->update(['status' => FinancialEntryStatus::Canceled->value]);
+                }
+
+                return;
+            }
+
+            $amountCents = (int) $maintenance->getAttribute('total_cents');
+
+            if ($amountCents <= 0) {
+                return;
+            }
+
+            $createdBy = $this->resolveMaintenanceCreatedBy($maintenance, $company);
+
+            if ($createdBy === null) {
+                return;
+            }
+
+            $code = $maintenance->type->isFixedCost()
+                ? self::MAINTENANCE_PREVENTIVE_CODE
+                : self::MAINTENANCE_CORRECTIVE_CODE;
+
+            $category = $this->resolveCategoryByCode($company, $code);
+
+            $competence = ($maintenance->closed_at ?? $maintenance->opened_at)->toDateString();
+
+            $attributes = [
+                'financial_category_id' => $category->getKey(),
+                'bank_account_id' => null,
+                'vehicle_id' => $maintenance->getAttribute('vehicle_id'),
+                'driver_id' => null,
+                'trip_id' => null,
+                'type' => FinancialEntryType::Expense->value,
+                'description' => $this->maintenanceDescription($maintenance),
+                'document_number' => $maintenance->getAttribute('invoice_number'),
+                'competence_date' => $competence,
+                'due_date' => $competence,
+                'paid_at' => null,
+                'amount_cents' => $amountCents,
+                'status' => FinancialEntryStatus::Forecast->value,
+                'payment_method' => null,
+                'recurrence_id' => null,
+            ];
+
+            if ($existing instanceof FinancialEntry) {
+                if ($existing->status === FinancialEntryStatus::Settled) {
+                    // Baixa é fato de caixa; editar a manutenção não desfaz a
+                    // liquidação já conciliada.
+                    unset(
+                        $attributes['status'],
+                        $attributes['paid_at'],
+                        $attributes['bank_account_id'],
+                        $attributes['payment_method'],
+                    );
+                }
+
+                $existing->update($attributes);
+
+                return;
+            }
+
+            FinancialEntry::query()->create([
+                'company_id' => $company->getKey(),
+                'sourceable_type' => Maintenance::class,
+                'sourceable_id' => $maintenance->getKey(),
+                'created_by' => $createdBy,
+                ...$attributes,
+            ]);
+        });
+    }
+
+    private function maintenanceDescription(Maintenance $maintenance): string
+    {
+        $workshop = $maintenance->getAttribute('workshop_name');
+
+        $description = sprintf(
+            'Manutenção · %s · %s',
+            $maintenance->type->label(),
+            $maintenance->category->label(),
+        );
+
+        if (is_string($workshop) && $workshop !== '') {
+            $description .= ' · '.$workshop;
+        }
+
+        return mb_substr($description, 0, 200);
+    }
+
+    private function resolveMaintenanceCreatedBy(Maintenance $maintenance, Company $company): ?int
+    {
+        $createdBy = $maintenance->getAttribute('created_by');
+
+        if ($createdBy !== null) {
+            return (int) $createdBy;
+        }
+
+        $group = Group::query()->find($company->getAttribute('group_id'));
+
+        return $group?->getAttribute('owner_user_id') === null
+            ? null
+            : (int) $group->getAttribute('owner_user_id');
     }
 
     /**

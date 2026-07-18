@@ -510,3 +510,29 @@ Fase 4. Modulo de abastecimentos com calculo de consumo (regra 8) e despesa sinc
 - `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
 - `composer test` (179 testes)
 - `npm run build`
+
+## 2026-07-18 - Etapa 0.25 (manutencoes)
+
+Fase 4. Modulo de manutencoes fechando o lado de custos do DRE, com despesa sincronizada no financeiro (regra 7). Escopo de campos completo (blueprint 5.5). Detalhamento por item (`maintenance_items`) fica para depois — por ora so os totais mao de obra + pecas.
+
+### Entregas da etapa 0.25
+
+- **Enums** `MaintenanceType` (preventiva/corretiva/preditiva/pneus/revisao geral/sinistro; `isFixedCost()` isola a preventiva), `MaintenanceCategory` (motor, transmissao, freios, suspensao, eletrica, pneus, funilaria, carreta, documentacao, outros), `MaintenanceStatus` (aberta/em andamento/concluida/cancelada).
+- **Migration + model `Maintenance`** (`BelongsToCompany`, soft delete, casts; `opened_at`/`closed_at`/`next_service_at` date, `labor_cents`/`parts_cents`/`total_cents` bigint, `downtime_hours` decimal(6,2)). Indices (`company_id`,`vehicle_id`,`opened_at`) e (`company_id`,`status`).
+- **Actions** `CreateMaintenance`/`UpdateMaintenance`/`DeleteMaintenance` (+ `MaintenanceData` DTO e `MaintenancePolicy` owner/admin): `total_cents = labor_cents + parts_cents` no DTO, validam veiculo da empresa ativa, atualizam `odometer_current` quando maior.
+- **`EntrySynchronizer::syncFromMaintenance`** + `MaintenanceObserver`: manutencao vira despesa **prevista a pagar** (blueprint 6.3: `paid_at` nulo, sem conta — o usuario da a baixa depois). Categoria 4.3 (preventiva, custo fixo) ou 3.4 (demais, corretiva). `competence_date = closed_at ?? opened_at`. Status `cancelada` ou soft delete cancela o lancamento; preserva baixa ja conciliada ao reeditar.
+- **HTTP + telas** (`/manutencoes`): requests `Store`/`Update` (reais->centavos via `Brl`, `closed_at` obrigatoria quando concluida), controllers single-action (list com filtros veiculo/tipo/situacao/periodo + total exceto canceladas, create/store/show/edit/update/destroy), views `index`/`_form`/`create`/`edit`/`show` (custos, parada, proxima revisao e link para o lancamento; total calculado no form via JS). Nav "Manutencoes" ligada.
+- **Teste `MaintenanceManagementTest`**: corretiva gera despesa prevista na 3.4 com competencia na abertura; preventiva cai na 4.3 com competencia na conclusao; conclusao obrigatoria quando concluida; cancelar status e excluir cancelam o lancamento; isolamento por grupo.
+
+### Decisoes da etapa 0.25
+
+- **Sempre prevista a pagar** (blueprint 6.3): manutencao nao tem "a vista" como abastecimento — a oficina normalmente fatura, e o usuario concilia a baixa depois no financeiro.
+- **Preventiva = 4.3, demais = 3.4**: preventiva e custo fixo planejado; corretiva/pneus/sinistro sao custo variavel.
+- **Itens detalhados adiados**: `maintenance_items` (peca/servico por linha com recalculo do total) fica para quando houver necessidade; por ora `labor` + `parts` -> `total`.
+
+### Validacoes da etapa 0.25
+
+- `vendor/bin/pint`
+- `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
+- `composer test` (185 testes)
+- `npm run build`

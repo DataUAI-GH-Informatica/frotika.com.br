@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Fuelings\Models;
+namespace App\Domain\Maintenances\Models;
 
 use App\Domain\Fleet\Models\Vehicle;
-use App\Domain\Fuelings\Enums\FuelingPaymentMethod;
-use App\Domain\Fuelings\Enums\FuelProduct;
-use App\Domain\Fuelings\Enums\FuelTank;
+use App\Domain\Maintenances\Enums\MaintenanceCategory;
+use App\Domain\Maintenances\Enums\MaintenanceStatus;
+use App\Domain\Maintenances\Enums\MaintenanceType;
 use App\Models\User;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
@@ -16,14 +16,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
- * @property FuelProduct $product
- * @property FuelTank $tank
- * @property FuelingPaymentMethod $payment_method
- * @property Carbon $fueled_at
- * @property int|null $km_since_last
- * @property numeric-string|null $km_per_liter
+ * @property MaintenanceType $type
+ * @property MaintenanceCategory $category
+ * @property MaintenanceStatus $status
+ * @property Carbon $opened_at
+ * @property Carbon|null $closed_at
  */
-final class Fueling extends Model
+final class Maintenance extends Model
 {
     use BelongsToCompany;
     use SoftDeletes;
@@ -33,17 +32,18 @@ final class Fueling extends Model
     protected function casts(): array
     {
         return [
-            'product' => FuelProduct::class,
-            'tank' => FuelTank::class,
-            'payment_method' => FuelingPaymentMethod::class,
-            'fueled_at' => 'datetime',
+            'type' => MaintenanceType::class,
+            'category' => MaintenanceCategory::class,
+            'status' => MaintenanceStatus::class,
+            'opened_at' => 'date',
+            'closed_at' => 'date',
             'odometer' => 'integer',
-            'liters' => 'decimal:3',
-            'price_per_liter' => 'decimal:3',
+            'labor_cents' => 'integer',
+            'parts_cents' => 'integer',
             'total_cents' => 'integer',
-            'full_tank' => 'boolean',
-            'km_since_last' => 'integer',
-            'km_per_liter' => 'decimal:3',
+            'downtime_hours' => 'decimal:2',
+            'next_service_odometer' => 'integer',
+            'next_service_at' => 'date',
         ];
     }
 

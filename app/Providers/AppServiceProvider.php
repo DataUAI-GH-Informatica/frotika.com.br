@@ -17,6 +17,9 @@ use App\Domain\Fleet\Policies\VehiclePolicy;
 use App\Domain\Fuelings\Models\Fueling;
 use App\Domain\Fuelings\Observers\FuelingObserver;
 use App\Domain\Fuelings\Policies\FuelingPolicy;
+use App\Domain\Maintenances\Models\Maintenance;
+use App\Domain\Maintenances\Observers\MaintenanceObserver;
+use App\Domain\Maintenances\Policies\MaintenancePolicy;
 use App\Domain\Partners\Models\BusinessPartner;
 use App\Domain\Partners\Policies\BusinessPartnerPolicy;
 use App\Domain\Tenancy\Models\Company;
@@ -53,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         Company::observe(CompanyObserver::class);
         CteDocument::observe(CteDocumentObserver::class);
         Fueling::observe(FuelingObserver::class);
+        Maintenance::observe(MaintenanceObserver::class);
 
         // Alias global para usar Format:: direto na Blade (seção 14.3 do blueprint).
         AliasLoader::getInstance()->alias('Format', Format::class);
@@ -61,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(BusinessPartner::class, BusinessPartnerPolicy::class);
         Gate::policy(Vehicle::class, VehiclePolicy::class);
         Gate::policy(Fueling::class, FuelingPolicy::class);
+        Gate::policy(Maintenance::class, MaintenancePolicy::class);
         Gate::policy(BankAccount::class, BankAccountPolicy::class);
         Gate::policy(FinancialEntry::class, FinancialEntryPolicy::class);
         Gate::policy(CteDocument::class, CteDocumentPolicy::class);
