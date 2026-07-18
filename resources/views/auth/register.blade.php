@@ -88,6 +88,16 @@
                     <option value="real" @selected(old('tax_regime') === 'real')>Lucro Real</option>
                 </x-ui.select>
 
+                <input type="hidden" name="company_zip_code" data-cnpj-field="zip_code" value="{{ old('company_zip_code') }}" />
+                <input type="hidden" name="company_street" data-cnpj-field="street" value="{{ old('company_street') }}" />
+                <input type="hidden" name="company_number" data-cnpj-field="number" value="{{ old('company_number') }}" />
+                <input type="hidden" name="company_complement" data-cnpj-field="complement" value="{{ old('company_complement') }}" />
+                <input type="hidden" name="company_district" data-cnpj-field="district" value="{{ old('company_district') }}" />
+                <input type="hidden" name="company_city" data-cnpj-field="city" value="{{ old('company_city') }}" />
+                <input type="hidden" name="company_state" data-cnpj-field="state" value="{{ old('company_state') }}" />
+                <input type="hidden" name="company_phone" data-cnpj-field="phone" value="{{ old('company_phone') }}" />
+                <input type="hidden" name="company_email" data-cnpj-field="email" value="{{ old('company_email') }}" />
+
                 <div class="mt-2 flex flex-wrap items-center justify-end gap-3 sm:col-span-2">
                     <x-ui.link-button href="{{ route('login') }}" variant="secondary">
                         Já tenho conta
@@ -113,6 +123,8 @@
             const manual = document.getElementById('cnpj-manual');
             const legal = document.querySelector('[data-cnpj-field="legal_name"]');
             const trade = document.querySelector('[data-cnpj-field="trade_name"]');
+            const hiddenFieldKeys = ['zip_code', 'street', 'number', 'complement', 'district', 'city', 'state', 'phone', 'email'];
+            const hiddenFields = Object.fromEntries(hiddenFieldKeys.map((key) => [key, document.querySelector(`[data-cnpj-field="${key}"]`)]));
             const baseUrl = input.dataset.cnpjUrl;
             const lockedClasses = ['bg-slate-50', 'text-slate-500'];
             let lastQueried = null;
@@ -146,6 +158,24 @@
                 status.className = `mt-1 text-sm ${tones[tone] || tones.info}`;
             };
 
+            const clearLookupDetails = () => {
+                hiddenFieldKeys.forEach((key) => {
+                    const field = hiddenFields[key];
+                    if (field) {
+                        field.value = '';
+                    }
+                });
+            };
+
+            const applyLookupDetails = (company) => {
+                hiddenFieldKeys.forEach((key) => {
+                    const field = hiddenFields[key];
+                    if (field) {
+                        field.value = company[key] || '';
+                    }
+                });
+            };
+
             const setLocked = (locked) => {
                 [legal, trade].forEach((field) => {
                     if (!field) {
@@ -161,6 +191,7 @@
 
             const lookup = async () => {
                 const digits = onlyDigits(input.value);
+                clearLookupDetails();
 
                 if (digits.length !== 14) {
                     setStatus('Digite os 14 dígitos do CNPJ.', 'warn');
@@ -195,6 +226,7 @@
                         if (company.trade_name) {
                             trade.value = company.trade_name;
                         }
+                        applyLookupDetails(company);
                         const place = [company.municipio, company.uf].filter(Boolean).join('/');
                         const parts = ['Empresa encontrada'];
                         if (place) parts.push(place);
@@ -220,6 +252,10 @@
             input.addEventListener('input', () => {
                 const digits = onlyDigits(input.value);
                 input.value = mask(digits);
+                if (digits.length !== 14) {
+                    clearLookupDetails();
+                    lastQueried = null;
+                }
                 if (digits.length === 14) {
                     lookup();
                 }

@@ -18,8 +18,15 @@ final class LookupCnpjControllerTest extends TestCase
                 'razao_social' => 'Transportes Serra Azul LTDA',
                 'nome_fantasia' => 'Serra Azul',
                 'descricao_situacao_cadastral' => 'ATIVA',
+                'logradouro' => 'Avenida Brasil',
+                'numero' => '1000',
+                'complemento' => 'Sala 4',
+                'bairro' => 'Centro',
                 'municipio' => 'SAO PAULO',
                 'uf' => 'SP',
+                'cep' => '01001-000',
+                'ddd_telefone_1' => '(11) 99999-0000',
+                'email' => 'contato@serraazul.com.br',
             ], 200),
         ]);
 
@@ -35,6 +42,15 @@ final class LookupCnpjControllerTest extends TestCase
                 'situacao' => 'ATIVA',
                 'municipio' => 'SAO PAULO',
                 'uf' => 'SP',
+                'zip_code' => '01001-000',
+                'street' => 'Avenida Brasil',
+                'number' => '1000',
+                'complement' => 'Sala 4',
+                'district' => 'Centro',
+                'city' => 'SAO PAULO',
+                'state' => 'SP',
+                'phone' => '11999990000',
+                'email' => 'contato@serraazul.com.br',
             ],
         ]);
     }
@@ -48,8 +64,15 @@ final class LookupCnpjControllerTest extends TestCase
                 'nome' => 'Empresa Fallback LTDA',
                 'fantasia' => 'Fallback',
                 'situacao' => 'ATIVA',
+                'logradouro' => 'Rua das Flores',
+                'numero' => '50',
+                'complemento' => '',
+                'bairro' => 'Jardim',
                 'municipio' => 'RIO DE JANEIRO',
                 'uf' => 'RJ',
+                'cep' => '20000-000',
+                'telefone' => '(21) 3333-4444',
+                'email' => 'financeiro@fallback.com.br',
                 'atividade_principal' => [
                     ['code' => '4930-2/02', 'text' => 'Transporte rodoviário de carga'],
                 ],
@@ -62,6 +85,9 @@ final class LookupCnpjControllerTest extends TestCase
         $response->assertJsonPath('status', 'found');
         $response->assertJsonPath('source', 'receitaws');
         $response->assertJsonPath('company.legal_name', 'Empresa Fallback LTDA');
+        $response->assertJsonPath('company.street', 'Rua das Flores');
+        $response->assertJsonPath('company.phone', '2133334444');
+        $response->assertJsonPath('company.email', 'financeiro@fallback.com.br');
     }
 
     public function test_consulta_retorna_not_found_quando_nenhuma_fonte_encontra(): void

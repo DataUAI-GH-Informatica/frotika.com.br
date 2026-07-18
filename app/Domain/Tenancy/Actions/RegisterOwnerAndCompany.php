@@ -25,8 +25,11 @@ final class RegisterOwnerAndCompany
 
     public function execute(RegisterOwnerAndCompanyData $data): RegisterOwnerAndCompanyResult
     {
+        $trialDays = (int) config('billing.company_license_trial_days', 7);
+        $monthlyPriceCents = (int) config('billing.company_license_monthly_price_cents', 9900);
+
         /** @var RegisterOwnerAndCompanyResult $result */
-        $result = DB::transaction(function () use ($data): RegisterOwnerAndCompanyResult {
+        $result = DB::transaction(function () use ($data, $trialDays): RegisterOwnerAndCompanyResult {
             $user = User::query()->create([
                 'name' => $data->userName,
                 'email' => $data->userEmail,
@@ -48,6 +51,15 @@ final class RegisterOwnerAndCompany
                 'legal_name' => $data->companyLegalName,
                 'trade_name' => $data->companyTradeName,
                 'tax_regime' => $data->taxRegime,
+                'zip_code' => $data->companyZipCode,
+                'street' => $data->companyStreet,
+                'number' => $data->companyNumber,
+                'complement' => $data->companyComplement,
+                'district' => $data->companyDistrict,
+                'city' => $data->companyCity,
+                'state' => $data->companyState,
+                'phone' => $data->companyPhone,
+                'email' => $data->companyEmail,
             ]);
 
             $group->users()->attach($user->getKey(), [
@@ -62,7 +74,7 @@ final class RegisterOwnerAndCompany
                 'group_id' => $group->getKey(),
                 'status' => 'trialing',
                 'started_at' => now(),
-                'trial_ends_at' => now()->addDays(14),
+                'trial_ends_at' => now()->addDays($trialDays),
                 'price_cents' => 0,
             ]);
 

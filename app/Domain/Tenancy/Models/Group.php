@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy\Models;
 
+use App\Domain\Billing\Models\CompanyLicense;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,22 @@ final class Group extends Model
     public function companies(): HasMany
     {
         return $this->hasMany(Company::class);
+    }
+
+    /**
+     * @return BelongsTo<Company, $this>
+     */
+    public function primaryCompany(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'primary_company_id');
+    }
+
+    /**
+     * @return HasMany<CompanyLicense, $this>
+     */
+    public function companyLicenses(): HasMany
+    {
+        return $this->hasMany(CompanyLicense::class);
     }
 
     /**

@@ -26,6 +26,15 @@ final class RegisterOwnerAndCompanyController
             companyTradeName: $validated['company_trade_name'],
             companyCnpj: $validated['company_cnpj'],
             taxRegime: $validated['tax_regime'] ?? 'simples',
+            companyZipCode: $validated['company_zip_code'] ?? null,
+            companyStreet: $validated['company_street'] ?? null,
+            companyNumber: $validated['company_number'] ?? null,
+            companyComplement: $validated['company_complement'] ?? null,
+            companyDistrict: $validated['company_district'] ?? null,
+            companyCity: $validated['company_city'] ?? null,
+            companyState: $validated['company_state'] ?? null,
+            companyPhone: $validated['company_phone'] ?? null,
+            companyEmail: $validated['company_email'] ?? null,
         ));
 
         if (! $request->expectsJson()) {

@@ -43,6 +43,15 @@ final readonly class CnpjData
             'situacao' => $this->registrationStatus,
             'municipio' => $this->city,
             'uf' => $this->state,
+            'zip_code' => $this->zipCode,
+            'street' => $this->street,
+            'number' => $this->number,
+            'complement' => $this->complement,
+            'district' => $this->district,
+            'city' => $this->city,
+            'state' => $this->state,
+            'phone' => $this->phone,
+            'email' => $this->email,
         ];
     }
 }

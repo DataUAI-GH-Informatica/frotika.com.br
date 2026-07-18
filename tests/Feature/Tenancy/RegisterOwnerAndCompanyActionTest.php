@@ -29,6 +29,15 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'company_trade_name' => 'Serra Azul',
             'company_cnpj' => '11222333000181',
             'tax_regime' => 'simples',
+            'company_zip_code' => '01310-100',
+            'company_street' => 'Avenida Paulista',
+            'company_number' => '1000',
+            'company_complement' => 'Conjunto 101',
+            'company_district' => 'Bela Vista',
+            'company_city' => 'Sao Paulo',
+            'company_state' => 'sp',
+            'company_phone' => '(11) 99999-0000',
+            'company_email' => 'contato@serraazul.com.br',
         ]);
 
         $response->assertCreated();
@@ -45,6 +54,15 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
         $this->assertDatabaseHas('companies', [
             'cnpj' => '11222333000181',
             'legal_name' => 'Transportes Serra Azul LTDA',
+            'zip_code' => '01310-100',
+            'street' => 'Avenida Paulista',
+            'number' => '1000',
+            'complement' => 'Conjunto 101',
+            'district' => 'Bela Vista',
+            'city' => 'Sao Paulo',
+            'state' => 'SP',
+            'phone' => '(11) 99999-0000',
+            'email' => 'contato@serraazul.com.br',
         ]);
     }
 
@@ -204,6 +222,15 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             companyLegalName: 'Transportes Serra Azul LTDA',
             companyTradeName: 'Serra Azul',
             companyCnpj: '12345678000190',
+            companyZipCode: '01310-100',
+            companyStreet: 'Avenida Paulista',
+            companyNumber: '1000',
+            companyComplement: 'Conjunto 101',
+            companyDistrict: 'Bela Vista',
+            companyCity: 'Sao Paulo',
+            companyState: 'SP',
+            companyPhone: '(11) 99999-0000',
+            companyEmail: 'contato@serraazul.com.br',
         ));
 
         $this->assertDatabaseHas('users', [
@@ -215,6 +242,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
         $this->assertDatabaseHas('groups', [
             'id' => $result->group->getKey(),
             'owner_user_id' => $result->user->getKey(),
+            'primary_company_id' => $result->company->getKey(),
             'type' => 'customer',
             'status' => 'active',
         ]);
@@ -224,6 +252,15 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'group_id' => $result->group->getKey(),
             'cnpj' => '12345678000190',
             'tax_regime' => 'simples',
+            'zip_code' => '01310-100',
+            'street' => 'Avenida Paulista',
+            'number' => '1000',
+            'complement' => 'Conjunto 101',
+            'district' => 'Bela Vista',
+            'city' => 'Sao Paulo',
+            'state' => 'SP',
+            'phone' => '(11) 99999-0000',
+            'email' => 'contato@serraazul.com.br',
         ]);
 
         $this->assertDatabaseHas('group_user', [
@@ -241,6 +278,14 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'group_id' => $result->group->getKey(),
             'status' => 'trialing',
             'price_cents' => 0,
+        ]);
+
+        $this->assertDatabaseHas('company_licenses', [
+            'group_id' => $result->group->getKey(),
+            'company_id' => $result->company->getKey(),
+            'is_primary' => true,
+            'status' => 'trialing',
+            'monthly_price_cents' => (int) config('billing.company_license_monthly_price_cents', 9900),
         ]);
 
         $this->assertDatabaseHas('bank_accounts', [
@@ -329,6 +374,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             $this->assertDatabaseCount('group_user', 0);
             $this->assertDatabaseCount('company_user', 0);
             $this->assertDatabaseCount('subscriptions', 0);
+            $this->assertDatabaseCount('company_licenses', 1);
             $this->assertDatabaseCount('bank_accounts', 0);
             $this->assertDatabaseCount('financial_categories', 0);
         }

@@ -15,10 +15,23 @@
         $topbarCompanies = $topbarCompanies ?? collect();
         $topbarCurrentCompanyId = $topbarCurrentCompanyId ?? null;
         $topbarCurrentCompanyName = $topbarCurrentCompanyName ?? 'Empresa ativa';
+        $topbarCompanyStatusMarkers = $topbarCompanyStatusMarkers ?? [];
+        $licenseBanner = $licenseBanner ?? null;
+
+        $licenseStatusChip = null;
+
+        if ($licenseBanner !== null) {
+            $licenseStatusChip = [
+                'label' => $licenseBanner['status_value'] === 'suspended' ? 'Licença suspensa' : 'Licença bloqueada',
+                'classes' => $licenseBanner['status_value'] === 'suspended'
+                    ? 'border-danger-300 bg-danger-50 text-danger-700'
+                    : 'border-warning-300 bg-warning-50 text-warning-700',
+            ];
+        }
 
         $navSections = [
             'Operação' => [
-                ['label' => 'Painel', 'route' => 'dashboard', 'active' => true],
+                ['label' => 'Painel', 'route' => 'dashboard', 'active' => 'dashboard'],
                 ['label' => 'Viagens', 'route' => null],
                 ['label' => 'Abastecimentos', 'route' => null],
                 ['label' => 'Manutenções', 'route' => null],
@@ -31,6 +44,7 @@
                 ['label' => 'Lançamentos', 'route' => null],
                 ['label' => 'Fluxo de caixa', 'route' => null],
                 ['label' => 'Contas bancárias', 'route' => null],
+                ['label' => 'Assinatura', 'route' => 'billing.licenses.index', 'active' => 'billing.licenses.*'],
             ],
             'Análise' => [
                 ['label' => 'DRE veicular', 'route' => null],
@@ -57,11 +71,14 @@
                             <ul class="mt-2 space-y-0.5">
                                 @foreach ($items as $item)
                                     <li>
+                                        @php
+                                            $isActive = isset($item['active']) && request()->routeIs($item['active']);
+                                        @endphp
                                         <a href="{{ $item['route'] ? route($item['route']) : '#' }}"
                                             @class([
                                                 'block rounded-md px-2 py-1.5 text-sm',
-                                                'border-l-[3px] border-accent-500 bg-brand-800 font-medium text-white' => $item['active'] ?? false,
-                                                'text-brand-100 hover:bg-brand-800/60' => !($item['active'] ?? false),
+                                                'border-l-[3px] border-accent-500 bg-brand-800 font-medium text-white' => $isActive,
+                                                'text-brand-100 hover:bg-brand-800/60' => ! $isActive,
                                             ])>
                                             {{ $item['label'] }}
                                         </a>
@@ -76,6 +93,12 @@
             <div class="border-t border-brand-800/80 pt-3">
                 <p class="px-2 text-2xs font-semibold uppercase tracking-[0.14em] text-brand-400">Empresa ativa</p>
                 <p class="px-2 text-sm font-medium text-white">{{ $topbarCurrentCompanyName }}</p>
+                @if ($licenseStatusChip)
+                    <a href="{{ route('billing.licenses.index') }}"
+                        class="mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest {{ $licenseStatusChip['classes'] }}">
+                        {{ $licenseStatusChip['label'] }}
+                    </a>
+                @endif
 
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
@@ -105,12 +128,22 @@
                                 class="h-9 min-w-56 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                                 onchange="this.form.requestSubmit()">
                                 @foreach ($topbarCompanies as $companyOption)
+                                    @php
+                                        $companyStatusMarker = $topbarCompanyStatusMarkers[$companyOption->getKey()] ?? null;
+                                    @endphp
                                     <option value="{{ $companyOption->getKey() }}" @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
-                                        {{ $companyOption->getAttribute('trade_name') }}
+                                        {{ $companyOption->getAttribute('trade_name') }}@if ($companyStatusMarker) [{{ $companyStatusMarker }}] @endif
                                     </option>
                                 @endforeach
                             </select>
                         </form>
+                    @endif
+
+                    @if ($licenseStatusChip)
+                        <a href="{{ route('billing.licenses.index') }}"
+                            class="hidden items-center rounded-full border px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest lg:inline-flex {{ $licenseStatusChip['classes'] }}">
+                            {{ $licenseStatusChip['label'] }}
+                        </a>
                     @endif
 
                     <label class="relative ml-auto hidden min-w-72 max-w-md flex-1 items-center md:flex">
@@ -139,10 +172,61 @@
             </header>
 
             <main class="flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-6 lg:pb-6">
+                @if ($licenseBanner)
+                    <div class="mb-4 rounded-md border border-warning-500/40 bg-warning-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-warning-700">
+                            Licença da empresa em {{ $licenseBanner['status_label'] }}. Operações de escrita estão bloqueadas.
+                        </p>
+
+                        @if ($licenseBanner['amount_cents'] !== null)
+                            <p class="mt-1 font-mono text-sm text-slate-900 tabular">
+                                <span class="unit">R$</span> {{ Format::moneyDecimal(((int) $licenseBanner['amount_cents']) / 100) }}
+                                @if ($licenseBanner['due_date'])
+                                    <span class="text-slate-500">· vencimento {{ Format::date($licenseBanner['due_date']) }}</span>
+                                @endif
+                            </p>
+                        @endif
+
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                            <a href="{{ route('billing.licenses.index') }}"
+                                class="inline-flex items-center rounded-md border border-brand-300 px-2 py-1 font-medium text-brand-700 hover:bg-brand-50">
+                                Ver assinatura
+                            </a>
+
+                            @if ($licenseBanner['boleto_url'])
+                                <a href="{{ $licenseBanner['boleto_url'] }}" target="_blank" rel="noopener"
+                                    class="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50">
+                                    Abrir boleto
+                                </a>
+                            @endif
+
+                            @if ($licenseBanner['boleto_pdf_url'])
+                                <a href="{{ $licenseBanner['boleto_pdf_url'] }}" target="_blank" rel="noopener"
+                                    class="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50">
+                                    PDF
+                                </a>
+                            @endif
+                        </div>
+
+                        @if (! $licenseBanner['can_manage'] && $licenseBanner['owner_name'])
+                            <p class="mt-2 text-xs text-slate-600">
+                                Fale com {{ $licenseBanner['owner_name'] }} para regularizar a licença.
+                            </p>
+                        @endif
+                    </div>
+                @endif
+
                 @if (session('status'))
                     <div
                         class="mb-4 rounded-md border border-success-500/40 bg-success-50 px-4 py-2.5 text-sm font-medium text-success-700">
                         {{ session('status') }}
+                    </div>
+                @endif
+
+                @if (session('warning'))
+                    <div
+                        class="mb-4 rounded-md border border-warning-500/40 bg-warning-50 px-4 py-2.5 text-sm font-medium text-warning-700">
+                        {{ session('warning') }}
                     </div>
                 @endif
 

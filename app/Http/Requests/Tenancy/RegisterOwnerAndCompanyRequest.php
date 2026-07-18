@@ -41,6 +41,15 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
                 },
             ],
             'tax_regime' => ['nullable', 'string', 'in:simples,presumido,real'],
+            'company_zip_code' => ['nullable', 'string', 'max:10'],
+            'company_street' => ['nullable', 'string', 'max:150'],
+            'company_number' => ['nullable', 'string', 'max:20'],
+            'company_complement' => ['nullable', 'string', 'max:80'],
+            'company_district' => ['nullable', 'string', 'max:80'],
+            'company_city' => ['nullable', 'string', 'max:80'],
+            'company_state' => ['nullable', 'string', 'size:2'],
+            'company_phone' => ['nullable', 'string', 'max:20'],
+            'company_email' => ['nullable', 'email', 'max:150'],
         ];
     }
 
@@ -74,6 +83,15 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
             'company_trade_name' => 'nome fantasia',
             'company_cnpj' => 'CNPJ da empresa',
             'tax_regime' => 'regime tributario',
+            'company_zip_code' => 'CEP da empresa',
+            'company_street' => 'logradouro da empresa',
+            'company_number' => 'numero da empresa',
+            'company_complement' => 'complemento da empresa',
+            'company_district' => 'bairro da empresa',
+            'company_city' => 'cidade da empresa',
+            'company_state' => 'UF da empresa',
+            'company_phone' => 'telefone da empresa',
+            'company_email' => 'e-mail da empresa',
         ];
     }
 
@@ -83,7 +101,39 @@ final class RegisterOwnerAndCompanyRequest extends FormRequest
             'email' => mb_strtolower(trim((string) $this->input('email', ''))),
             'company_cnpj' => Cnpj::digits((string) $this->input('company_cnpj', '')),
             'tax_regime' => (string) ($this->input('tax_regime', 'simples') ?: 'simples'),
+            'company_legal_name' => trim((string) $this->input('company_legal_name', '')),
+            'company_trade_name' => trim((string) $this->input('company_trade_name', '')),
+            'company_zip_code' => $this->nullableTrimmed('company_zip_code'),
+            'company_street' => $this->nullableTrimmed('company_street'),
+            'company_number' => $this->nullableTrimmed('company_number'),
+            'company_complement' => $this->nullableTrimmed('company_complement'),
+            'company_district' => $this->nullableTrimmed('company_district'),
+            'company_city' => $this->nullableTrimmed('company_city'),
+            'company_state' => $this->nullableUpper('company_state'),
+            'company_phone' => $this->nullableTrimmed('company_phone'),
+            'company_email' => $this->nullableLower('company_email'),
         ]);
+    }
+
+    private function nullableTrimmed(string $key): ?string
+    {
+        $value = trim((string) $this->input($key, ''));
+
+        return $value === '' ? null : $value;
+    }
+
+    private function nullableLower(string $key): ?string
+    {
+        $value = $this->nullableTrimmed($key);
+
+        return $value === null ? null : mb_strtolower($value);
+    }
+
+    private function nullableUpper(string $key): ?string
+    {
+        $value = $this->nullableTrimmed($key);
+
+        return $value === null ? null : mb_strtoupper($value);
     }
 
     protected function failedValidation(Validator $validator): never
