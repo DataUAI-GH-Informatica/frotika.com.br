@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Platform;
 
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Domain\Tenancy\Enums\GroupType;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
@@ -61,7 +61,7 @@ final class PlatformBillingTest extends TestCase
     public function test_admin_da_plataforma_lanca_boleto_manual_para_licenca_de_um_cliente(): void
     {
         $admin = $this->createPlatformAdmin();
-        [$group, $company, $license] = $this->createCustomerScenario();
+        [$group, , $license] = $this->createCustomerScenario();
 
         $response = $this
             ->actingAs($admin)
@@ -75,20 +75,19 @@ final class PlatformBillingTest extends TestCase
             ]);
 
         $response->assertRedirect(route('platform.groups.show', ['group' => $group->getKey()]));
-        $response->assertSessionHas('status', 'Boleto lançado com sucesso para a empresa selecionada.');
+        $response->assertSessionHas('status', 'Boleto lançado com sucesso para o grupo.');
 
-        $this->assertDatabaseHas('company_license_invoices', [
-            'company_license_id' => $license->getKey(),
+        $this->assertDatabaseHas('group_license_invoices', [
+            'group_license_id' => $license->getKey(),
             'group_id' => $group->getKey(),
-            'company_id' => $company->getKey(),
             'amount_cents' => 12990,
-            'status' => CompanyLicenseInvoiceStatus::Pending->value,
+            'status' => GroupLicenseInvoiceStatus::Pending->value,
             'created_by_user_id' => $admin->getKey(),
         ]);
 
-        $this->assertDatabaseHas('company_licenses', [
+        $this->assertDatabaseHas('group_licenses', [
             'id' => $license->getKey(),
-            'status' => CompanyLicenseStatus::PendingPayment->value,
+            'status' => GroupLicenseStatus::PendingPayment->value,
         ]);
     }
 
@@ -108,26 +107,25 @@ final class PlatformBillingTest extends TestCase
         $response->assertRedirect(route('platform.groups.show', ['group' => $group->getKey()]));
         $response->assertSessionHasErrors(['due_date']);
 
-        $this->assertDatabaseCount('company_license_invoices', 0);
+        $this->assertDatabaseCount('group_license_invoices', 0);
     }
 
     public function test_admin_da_plataforma_da_baixa_manual_e_ativa_a_licenca(): void
     {
         $admin = $this->createPlatformAdmin();
-        [$group, $company, $license] = $this->createCustomerScenario();
+        [$group, , $license] = $this->createCustomerScenario();
 
-        $invoice = CompanyLicenseInvoice::query()->create([
-            'company_license_id' => $license->getKey(),
+        $invoice = GroupLicenseInvoice::query()->create([
+            'group_license_id' => $license->getKey(),
             'group_id' => $group->getKey(),
-            'company_id' => $company->getKey(),
             'reference_month' => now()->startOfMonth()->toDateString(),
             'amount_cents' => 15990,
             'due_date' => now()->addDays(1)->toDateString(),
-            'status' => CompanyLicenseInvoiceStatus::Pending,
+            'status' => GroupLicenseInvoiceStatus::Pending,
             'boleto_url' => 'https://pagamentos.exemplo.com/boleto/15990',
         ]);
 
-        $license->forceFill(['status' => CompanyLicenseStatus::PendingPayment])->save();
+        $license->forceFill(['status' => GroupLicenseStatus::PendingPayment])->save();
 
         $response = $this
             ->actingAs($admin)
@@ -139,16 +137,16 @@ final class PlatformBillingTest extends TestCase
         $response->assertRedirect(route('platform.groups.show', ['group' => $group->getKey()]));
         $response->assertSessionHas('status', 'Pagamento confirmado manualmente com sucesso.');
 
-        $this->assertDatabaseHas('company_license_invoices', [
+        $this->assertDatabaseHas('group_license_invoices', [
             'id' => $invoice->getKey(),
-            'status' => CompanyLicenseInvoiceStatus::Paid->value,
+            'status' => GroupLicenseInvoiceStatus::Paid->value,
             'paid_note' => 'Conferido no banco manualmente',
             'confirmed_by_user_id' => $admin->getKey(),
         ]);
 
-        $this->assertDatabaseHas('company_licenses', [
+        $this->assertDatabaseHas('group_licenses', [
             'id' => $license->getKey(),
-            'status' => CompanyLicenseStatus::Active->value,
+            'status' => GroupLicenseStatus::Active->value,
         ]);
 
         $this->assertNotNull($license->fresh()->activated_at);
@@ -167,7 +165,7 @@ final class PlatformBillingTest extends TestCase
             ]);
 
         $response->assertForbidden();
-        $this->assertDatabaseCount('company_license_invoices', 0);
+        $this->assertDatabaseCount('group_license_invoices', 0);
     }
 
     private function createPlatformAdmin(): User
@@ -182,7 +180,7 @@ final class PlatformBillingTest extends TestCase
     }
 
     /**
-     * @return array{Group, Company, CompanyLicense}
+     * @return array{Group, Company, GroupLicense}
      */
     private function createCustomerScenario(bool $trialEnded = true): array
     {
@@ -194,6 +192,14 @@ final class PlatformBillingTest extends TestCase
             'type' => GroupType::Customer->value,
             'owner_user_id' => $owner->getKey(),
             'status' => 'active',
+        ]);
+
+        $license = GroupLicense::query()->create([
+            'group_id' => $group->getKey(),
+            'status' => GroupLicenseStatus::Trialing,
+            'trial_starts_at' => now()->subDays(8),
+            'trial_ends_at' => $trialEnded ? now()->subDay() : now()->addDay(),
+            'monthly_price_cents' => 9900,
         ]);
 
         $company = Company::query()->create([
@@ -212,14 +218,6 @@ final class PlatformBillingTest extends TestCase
         ]);
 
         $owner->companies()->attach($company->getKey());
-
-        $license = CompanyLicense::query()->where('company_id', $company->getKey())->firstOrFail();
-        $license->forceFill([
-            'status' => CompanyLicenseStatus::Trialing,
-            'trial_starts_at' => now()->subDays(8),
-            'trial_ends_at' => $trialEnded ? now()->subDay() : now()->addDay(),
-            'monthly_price_cents' => 9900,
-        ])->save();
 
         return [$group, $company, $license];
     }

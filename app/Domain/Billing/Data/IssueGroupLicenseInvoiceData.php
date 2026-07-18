@@ -6,7 +6,7 @@ namespace App\Domain\Billing\Data;
 
 use Carbon\CarbonImmutable;
 
-final readonly class IssueManualCompanyLicenseInvoiceData
+final readonly class IssueGroupLicenseInvoiceData
 {
     public function __construct(
         public int $amountCents,

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy\Models;
 
-use App\Domain\Billing\Models\CompanyLicense;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Domain\Tenancy\Enums\GroupType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -59,11 +60,11 @@ final class Group extends Model
     }
 
     /**
-     * @return HasMany<CompanyLicense, $this>
+     * @return HasOne<GroupLicense, $this>
      */
-    public function companyLicenses(): HasMany
+    public function license(): HasOne
     {
-        return $this->hasMany(CompanyLicense::class);
+        return $this->hasOne(GroupLicense::class);
     }
 
     /**

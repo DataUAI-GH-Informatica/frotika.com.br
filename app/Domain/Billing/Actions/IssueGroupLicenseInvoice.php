@@ -4,51 +4,50 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Actions;
 
-use App\Domain\Billing\Data\IssueManualCompanyLicenseInvoiceData;
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Data\IssueGroupLicenseInvoiceData;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
-final class IssueManualCompanyLicenseInvoice
+final class IssueGroupLicenseInvoice
 {
-    public function execute(User $actor, CompanyLicense $license, IssueManualCompanyLicenseInvoiceData $data): CompanyLicenseInvoice
+    public function execute(User $actor, GroupLicense $license, IssueGroupLicenseInvoiceData $data): GroupLicenseInvoice
     {
         Gate::forUser($actor)->authorize('access-platform');
 
         if ($license->trial_ends_at !== null && now()->lt($license->trial_ends_at)) {
             throw ValidationException::withMessages([
-                'due_date' => 'A licença ainda está em trial. Emita o boleto após o fim dos 7 dias.',
+                'due_date' => 'A licença ainda está em trial. Emita o boleto após o fim do período de avaliação.',
             ]);
         }
 
         $hasOpenInvoice = $license->invoices()
             ->whereIn('status', [
-                CompanyLicenseInvoiceStatus::Pending->value,
-                CompanyLicenseInvoiceStatus::Overdue->value,
+                GroupLicenseInvoiceStatus::Pending->value,
+                GroupLicenseInvoiceStatus::Overdue->value,
             ])
             ->exists();
 
         if ($hasOpenInvoice) {
             throw ValidationException::withMessages([
-                'company_license_id' => 'Já existe boleto pendente para esta empresa.',
+                'group_license_id' => 'Já existe boleto pendente para este grupo.',
             ]);
         }
 
-        /** @var CompanyLicenseInvoice $invoice */
-        $invoice = DB::transaction(function () use ($actor, $license, $data): CompanyLicenseInvoice {
-            $invoice = CompanyLicenseInvoice::query()->create([
-                'company_license_id' => $license->getKey(),
+        /** @var GroupLicenseInvoice $invoice */
+        $invoice = DB::transaction(function () use ($actor, $license, $data): GroupLicenseInvoice {
+            $invoice = GroupLicenseInvoice::query()->create([
+                'group_license_id' => $license->getKey(),
                 'group_id' => $license->group_id,
-                'company_id' => $license->company_id,
                 'reference_month' => $data->referenceMonth->toDateString(),
                 'amount_cents' => $data->amountCents,
                 'due_date' => $data->dueDate->toDateString(),
-                'status' => CompanyLicenseInvoiceStatus::Pending,
+                'status' => GroupLicenseInvoiceStatus::Pending,
                 'boleto_number' => $data->boletoNumber,
                 'boleto_url' => $data->boletoUrl,
                 'boleto_pdf_url' => $data->boletoPdfUrl,
@@ -56,7 +55,7 @@ final class IssueManualCompanyLicenseInvoice
             ]);
 
             $license->forceFill([
-                'status' => CompanyLicenseStatus::PendingPayment,
+                'status' => GroupLicenseStatus::PendingPayment,
                 'suspended_at' => null,
             ])->save();
 

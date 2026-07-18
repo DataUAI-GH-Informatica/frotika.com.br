@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Models;
 
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Tenancy\Models\Company;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
 use App\Domain\Tenancy\Models\Group;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property CompanyLicenseStatus $status
+ * @property GroupLicenseStatus $status
  */
-class CompanyLicense extends Model
+class GroupLicense extends Model
 {
     use SoftDeletes;
 
@@ -25,8 +24,7 @@ class CompanyLicense extends Model
     protected function casts(): array
     {
         return [
-            'is_primary' => 'boolean',
-            'status' => CompanyLicenseStatus::class,
+            'status' => GroupLicenseStatus::class,
             'trial_starts_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'activated_at' => 'datetime',
@@ -43,26 +41,18 @@ class CompanyLicense extends Model
     }
 
     /**
-     * @return BelongsTo<Company, $this>
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
-
-    /**
-     * @return HasMany<CompanyLicenseInvoice, $this>
+     * @return HasMany<GroupLicenseInvoice, $this>
      */
     public function invoices(): HasMany
     {
-        return $this->hasMany(CompanyLicenseInvoice::class);
+        return $this->hasMany(GroupLicenseInvoice::class);
     }
 
     /**
-     * @return HasOne<CompanyLicenseInvoice, $this>
+     * @return HasOne<GroupLicenseInvoice, $this>
      */
     public function latestInvoice(): HasOne
     {
-        return $this->hasOne(CompanyLicenseInvoice::class)->latestOfMany('due_date');
+        return $this->hasOne(GroupLicenseInvoice::class)->latestOfMany('due_date');
     }
 }

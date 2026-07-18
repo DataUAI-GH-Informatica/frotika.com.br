@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Billing;
 
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
-use App\Http\Middleware\EnsureCompanyLicenseAllowsWrite;
+use App\Http\Middleware\EnsureGroupLicenseAllowsWrite;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
+final class EnsureGroupLicenseAllowsWriteTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -26,18 +26,18 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         parent::setUp();
 
         if (! Route::has('billing.lock.write-test')) {
-            Route::middleware(['web', 'auth', 'verified', EnsureCompanyLicenseAllowsWrite::class])
+            Route::middleware(['web', 'auth', 'verified', EnsureGroupLicenseAllowsWrite::class])
                 ->post('/_test/licencas/escrita', static fn () => response()->json(['ok' => true]))
                 ->name('billing.lock.write-test');
         }
     }
 
-    public function test_bloqueia_escrita_quando_licenca_da_empresa_esta_pendente_de_pagamento(): void
+    public function test_bloqueia_escrita_quando_licenca_do_grupo_esta_pendente_de_pagamento(): void
     {
         [$user, $license] = $this->createUserWithCurrentCompany();
 
         $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
+            'status' => GroupLicenseStatus::PendingPayment,
             'trial_ends_at' => now()->subDay(),
         ])->save();
 
@@ -46,7 +46,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
             ->postJson('/_test/licencas/escrita');
 
         $response->assertStatus(423);
-        $response->assertJsonPath('status', 'company_license_blocked');
+        $response->assertJsonPath('status', 'group_license_blocked');
     }
 
     public function test_permite_leitura_do_painel_mesmo_com_licenca_pendente(): void
@@ -54,7 +54,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         [$user, $license] = $this->createUserWithCurrentCompany();
 
         $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
+            'status' => GroupLicenseStatus::PendingPayment,
             'trial_ends_at' => now()->subDay(),
         ])->save();
 
@@ -70,7 +70,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         [$user, $license] = $this->createUserWithCurrentCompany();
 
         $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
+            'status' => GroupLicenseStatus::PendingPayment,
             'trial_ends_at' => now()->subDay(),
         ])->save();
 
@@ -87,33 +87,12 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         $response->assertJsonPath('company_id', $otherCompany->getKey());
     }
 
-    public function test_seletor_exibe_marcador_quando_status_da_empresa_difere_da_atual(): void
-    {
-        [$user, $license] = $this->createUserWithCurrentCompany();
-
-        $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
-            'trial_ends_at' => now()->subDay(),
-        ])->save();
-
-        $otherCompany = $this->createCompany($license->group()->firstOrFail(), 'Filial Norte', '55111222000113');
-        $user->companies()->attach($otherCompany->getKey());
-
-        $response = $this
-            ->actingAs($user)
-            ->get(route('dashboard'));
-
-        $response->assertOk();
-        $response->assertSee('Filial Norte');
-        $response->assertSee('[Trial]');
-    }
-
     public function test_exibe_banner_persistente_no_dashboard_quando_licenca_esta_pendente(): void
     {
         [$user, $license] = $this->createUserWithCurrentCompany();
 
         $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
+            'status' => GroupLicenseStatus::PendingPayment,
             'trial_ends_at' => now()->subDay(),
         ])->save();
 
@@ -134,14 +113,14 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         [$owner, $license] = $this->createUserWithCurrentCompany();
 
         $license->forceFill([
-            'status' => CompanyLicenseStatus::PendingPayment,
+            'status' => GroupLicenseStatus::PendingPayment,
             'trial_ends_at' => now()->subDay(),
         ])->save();
 
         $this->createPendingInvoice($license);
 
         $group = $license->group()->firstOrFail();
-        $company = $license->company()->firstOrFail();
+        $company = $group->primaryCompany()->firstOrFail();
 
         /** @var User $member */
         $member = User::factory()->create();
@@ -168,7 +147,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
     }
 
     /**
-     * @return array{User, CompanyLicense}
+     * @return array{User, GroupLicense}
      */
     private function createUserWithCurrentCompany(): array
     {
@@ -181,6 +160,14 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
             'type' => 'customer',
             'owner_user_id' => $user->getKey(),
             'status' => 'active',
+        ]);
+
+        $license = GroupLicense::query()->create([
+            'group_id' => $group->getKey(),
+            'status' => GroupLicenseStatus::Trialing,
+            'trial_starts_at' => now()->subDays(8),
+            'trial_ends_at' => now()->subDay(),
+            'monthly_price_cents' => 9900,
         ]);
 
         $company = $this->createCompany($group, 'Empresa Alfa', '55111222000112');
@@ -198,10 +185,6 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
             'current_company_id' => $company->getKey(),
         ])->save();
 
-        $license = CompanyLicense::query()
-            ->where('company_id', $company->getKey())
-            ->firstOrFail();
-
         return [$user, $license];
     }
 
@@ -217,16 +200,15 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         ]);
     }
 
-    private function createPendingInvoice(CompanyLicense $license): CompanyLicenseInvoice
+    private function createPendingInvoice(GroupLicense $license): GroupLicenseInvoice
     {
-        return CompanyLicenseInvoice::query()->create([
-            'company_license_id' => $license->getKey(),
+        return GroupLicenseInvoice::query()->create([
+            'group_license_id' => $license->getKey(),
             'group_id' => $license->group_id,
-            'company_id' => $license->company_id,
             'reference_month' => now()->startOfMonth()->toDateString(),
             'amount_cents' => 9900,
             'due_date' => now()->addDays(2)->toDateString(),
-            'status' => CompanyLicenseInvoiceStatus::Pending,
+            'status' => GroupLicenseInvoiceStatus::Pending,
             'boleto_number' => '34191.79001 01043.510047 91020.150008 9 99990000009900',
             'boleto_url' => 'https://frotika.com.br/boletos/demo',
             'boleto_pdf_url' => 'https://frotika.com.br/boletos/demo.pdf',

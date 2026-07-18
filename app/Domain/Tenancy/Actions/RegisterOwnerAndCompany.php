@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy\Actions;
 
-use App\Domain\Billing\Models\Subscription;
+use App\Domain\Billing\Actions\RegisterGroupLicense;
 use App\Domain\Finance\Actions\SeedDefaultFinancialCategories;
 use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Tenancy\Data\RegisterOwnerAndCompanyData;
@@ -21,15 +21,16 @@ final class RegisterOwnerAndCompany
     public function __construct(
         private readonly TenantContext $tenant,
         private readonly SeedDefaultFinancialCategories $seedDefaultFinancialCategories,
+        private readonly RegisterGroupLicense $registerGroupLicense,
     ) {}
 
     public function execute(RegisterOwnerAndCompanyData $data): RegisterOwnerAndCompanyResult
     {
-        $trialDays = (int) config('billing.company_license_trial_days', 7);
-        $monthlyPriceCents = (int) config('billing.company_license_monthly_price_cents', 9900);
+        $trialDays = (int) config('billing.group_license_trial_days', 7);
+        $monthlyPriceCents = (int) config('billing.group_license_monthly_price_cents', 9900);
 
         /** @var RegisterOwnerAndCompanyResult $result */
-        $result = DB::transaction(function () use ($data, $trialDays): RegisterOwnerAndCompanyResult {
+        $result = DB::transaction(function () use ($data, $trialDays, $monthlyPriceCents): RegisterOwnerAndCompanyResult {
             $user = User::query()->create([
                 'name' => $data->userName,
                 'email' => $data->userEmail,
@@ -43,6 +44,8 @@ final class RegisterOwnerAndCompany
                 'owner_user_id' => $user->getKey(),
                 'status' => 'active',
             ]);
+
+            $this->registerGroupLicense->execute($group, $trialDays, $monthlyPriceCents);
 
             $company = Company::query()->create([
                 'group_id' => $group->getKey(),
@@ -69,14 +72,6 @@ final class RegisterOwnerAndCompany
             ]);
 
             $company->users()->attach($user->getKey());
-
-            Subscription::query()->create([
-                'group_id' => $group->getKey(),
-                'status' => 'trialing',
-                'started_at' => now(),
-                'trial_ends_at' => now()->addDays($trialDays),
-                'price_cents' => 0,
-            ]);
 
             $this->seedDefaultFinancialCategories->execute($company);
 

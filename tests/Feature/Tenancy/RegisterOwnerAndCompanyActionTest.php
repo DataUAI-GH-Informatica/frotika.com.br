@@ -274,19 +274,13 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'user_id' => $result->user->getKey(),
         ]);
 
-        $this->assertDatabaseHas('subscriptions', [
+        $this->assertDatabaseHas('group_licenses', [
             'group_id' => $result->group->getKey(),
             'status' => 'trialing',
-            'price_cents' => 0,
+            'monthly_price_cents' => (int) config('billing.group_license_monthly_price_cents', 9900),
         ]);
 
-        $this->assertDatabaseHas('company_licenses', [
-            'group_id' => $result->group->getKey(),
-            'company_id' => $result->company->getKey(),
-            'is_primary' => true,
-            'status' => 'trialing',
-            'monthly_price_cents' => (int) config('billing.company_license_monthly_price_cents', 9900),
-        ]);
+        $this->assertDatabaseCount('group_licenses', 1);
 
         $this->assertDatabaseHas('bank_accounts', [
             'company_id' => $result->company->getKey(),
@@ -373,8 +367,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             $this->assertDatabaseCount('companies', 1);
             $this->assertDatabaseCount('group_user', 0);
             $this->assertDatabaseCount('company_user', 0);
-            $this->assertDatabaseCount('subscriptions', 0);
-            $this->assertDatabaseCount('company_licenses', 1);
+            $this->assertDatabaseCount('group_licenses', 0);
             $this->assertDatabaseCount('bank_accounts', 0);
             $this->assertDatabaseCount('financial_categories', 0);
         }

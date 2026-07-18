@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
 use App\Domain\Tenancy\Observers\CompanyObserver;
+use App\Domain\Tenancy\Policies\CompanyPolicy;
 use App\Models\User;
 use App\Support\Format;
 use App\Support\Tenancy\TenantContext;
@@ -40,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
         // Alias global para usar Format:: direto na Blade (seção 14.3 do blueprint).
         AliasLoader::getInstance()->alias('Format', Format::class);
 
+        Gate::policy(Company::class, CompanyPolicy::class);
+
         Gate::define('switch-company', static function (User $user, Company $company): bool {
             return $user->companies()->whereKey($company->getKey())->exists()
                 && $user->groups()->whereKey($company->getAttribute('group_id'))->exists();
@@ -67,91 +70,48 @@ class AppServiceProvider extends ServiceProvider
                 ->orderBy('trade_name')
                 ->get(['companies.id', 'companies.trade_name']);
 
-            $companyIds = $companies->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
-
-            $licensesByCompanyId = CompanyLicense::query()
-                ->where('group_id', $user->current_group_id)
-                ->whereIn('company_id', $companyIds)
-                ->get(['company_id', 'status'])
-                ->keyBy('company_id');
-
-            $currentCompanyStatus = null;
-
-            if ($user->current_company_id !== null) {
-                $currentCompanyStatus = $licensesByCompanyId
-                    ->get($user->current_company_id)
-                    ?->status;
-            }
-
-            $topbarCompanyStatusMarkers = [];
-
-            foreach ($companies as $companyOption) {
-                $licenseStatus = $licensesByCompanyId
-                    ->get($companyOption->getKey())
-                    ?->status;
-
-                if (! $licenseStatus instanceof CompanyLicenseStatus) {
-                    continue;
-                }
-
-                if ($currentCompanyStatus instanceof CompanyLicenseStatus && $licenseStatus === $currentCompanyStatus) {
-                    continue;
-                }
-
-                $topbarCompanyStatusMarkers[$companyOption->getKey()] = match ($licenseStatus) {
-                    CompanyLicenseStatus::Active => 'Ativa',
-                    CompanyLicenseStatus::Trialing => 'Trial',
-                    CompanyLicenseStatus::PendingPayment => 'Bloqueada',
-                    CompanyLicenseStatus::Suspended => 'Suspensa',
-                };
-            }
-
             $currentCompanyName = $companies
                 ->firstWhere('id', $user->current_company_id)
                 ?->getAttribute('trade_name');
 
             $licenseBanner = null;
 
-            if ($user->current_company_id !== null) {
-                /** @var CompanyLicense|null $currentLicense */
-                $currentLicense = CompanyLicense::query()
-                    ->where('group_id', $user->current_group_id)
-                    ->where('company_id', $user->current_company_id)
+            /** @var GroupLicense|null $license */
+            $license = GroupLicense::query()
+                ->where('group_id', $user->current_group_id)
+                ->first();
+
+            if ($license !== null && ! in_array($license->status, [GroupLicenseStatus::Active, GroupLicenseStatus::Trialing], true)) {
+                $group = Group::query()
+                    ->with('owner:id,name')
+                    ->find($user->current_group_id);
+
+                /** @var GroupLicenseInvoice|null $openInvoice */
+                $openInvoice = $license->invoices()
+                    ->whereIn('status', [
+                        GroupLicenseInvoiceStatus::Pending->value,
+                        GroupLicenseInvoiceStatus::Overdue->value,
+                    ])
+                    ->orderBy('due_date')
                     ->first();
 
-                if ($currentLicense !== null && ! in_array($currentLicense->status, [CompanyLicenseStatus::Active, CompanyLicenseStatus::Trialing], true)) {
-                    $group = Group::query()
-                        ->with('owner:id,name')
-                        ->find($user->current_group_id);
+                $isOwner = $group !== null && (int) $group->owner_user_id === $user->getKey();
 
-                    /** @var CompanyLicenseInvoice|null $openInvoice */
-                    $openInvoice = $currentLicense->invoices()
-                        ->whereIn('status', [
-                            CompanyLicenseInvoiceStatus::Pending->value,
-                            CompanyLicenseInvoiceStatus::Overdue->value,
-                        ])
-                        ->orderBy('due_date')
-                        ->first();
-
-                    $isOwner = $group !== null && (int) $group->owner_user_id === $user->getKey();
-
-                    $licenseBanner = [
-                        'status_label' => $currentLicense->status->label(),
-                        'status_value' => $currentLicense->status->value,
-                        'due_date' => $openInvoice?->due_date,
-                        'amount_cents' => $openInvoice?->amount_cents,
-                        'boleto_url' => $openInvoice?->boleto_url,
-                        'boleto_pdf_url' => $openInvoice?->boleto_pdf_url,
-                        'owner_name' => $group?->owner?->name,
-                        'is_owner' => $isOwner,
-                    ];
-                }
+                $licenseBanner = [
+                    'status_label' => $license->status->label(),
+                    'status_value' => $license->status->value,
+                    'due_date' => $openInvoice?->due_date,
+                    'amount_cents' => $openInvoice?->amount_cents,
+                    'boleto_url' => $openInvoice?->boleto_url,
+                    'boleto_pdf_url' => $openInvoice?->boleto_pdf_url,
+                    'owner_name' => $group?->owner?->name,
+                    'is_owner' => $isOwner,
+                ];
             }
 
             $view->with('topbarCompanies', $companies);
             $view->with('topbarCurrentCompanyId', $user->current_company_id);
             $view->with('topbarCurrentCompanyName', $currentCompanyName);
-            $view->with('topbarCompanyStatusMarkers', $topbarCompanyStatusMarkers);
             $view->with('licenseBanner', $licenseBanner);
             $view->with('isPlatformAdmin', $user->isPlatformAdmin());
         });

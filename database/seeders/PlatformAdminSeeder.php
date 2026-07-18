@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Domain\Tenancy\Enums\GroupType;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
@@ -77,14 +77,13 @@ final class PlatformAdminSeeder extends Seeder
                 'current_company_id' => $company->getKey(),
             ])->save();
 
-            $license = CompanyLicense::query()->firstOrNew([
-                'company_id' => $company->getKey(),
+            $license = GroupLicense::query()->firstOrNew([
+                'group_id' => $group->getKey(),
             ]);
 
             $license->forceFill([
                 'group_id' => $group->getKey(),
-                'is_primary' => true,
-                'status' => CompanyLicenseStatus::Active,
+                'status' => GroupLicenseStatus::Active,
                 'trial_starts_at' => now(),
                 'trial_ends_at' => null,
                 'activated_at' => now(),

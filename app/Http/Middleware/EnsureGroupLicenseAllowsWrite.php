@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicense;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class EnsureCompanyLicenseAllowsWrite
+final class EnsureGroupLicenseAllowsWrite
 {
     /**
      * @var list<string>
@@ -39,13 +39,12 @@ final class EnsureCompanyLicenseAllowsWrite
 
         $user = $request->user();
 
-        if (! $user instanceof User || $user->current_group_id === null || $user->current_company_id === null) {
+        if (! $user instanceof User || $user->current_group_id === null) {
             return $next($request);
         }
 
-        $license = CompanyLicense::query()
+        $license = GroupLicense::query()
             ->where('group_id', $user->current_group_id)
-            ->where('company_id', $user->current_company_id)
             ->first();
 
         if ($license === null) {
@@ -54,16 +53,16 @@ final class EnsureCompanyLicenseAllowsWrite
 
         $status = $license->status;
 
-        if (in_array($status, [CompanyLicenseStatus::Active, CompanyLicenseStatus::Trialing], true)) {
+        if (in_array($status, [GroupLicenseStatus::Active, GroupLicenseStatus::Trialing], true)) {
             return $next($request);
         }
 
-        $message = 'Operações de escrita estão bloqueadas para esta empresa até a quitação do boleto da licença.';
+        $message = 'Operações de escrita estão bloqueadas para o grupo até a quitação do boleto da licença.';
 
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => $message,
-                'status' => 'company_license_blocked',
+                'status' => 'group_license_blocked',
                 'license_status' => $status->value,
             ], 423);
         }

@@ -299,3 +299,20 @@
 
 - Primeira listagem Livewire (Fase 2 - Frota) copiando `frotika-ui/reference/exemplo-lista.blade.php`, ja com a `km-gauge` no card do veiculo.
 - Quando os testes passarem a usar recursos do MySQL 8 (a instrucao de testes ja pede), trocar o SQLite `:memory:` do `phpunit.xml` por um servico MySQL no workflow de CI.
+
+## 2026-07-18 - Etapa 0.15 (licenca por grupo + cadastro de empresas)
+
+Ver ADR-003.
+
+### Entregas da etapa 0.15
+
+- **Licenca migrada de empresa para grupo.** `company_licenses`/`company_license_invoices` -> `group_licenses`/`group_license_invoices` (uma licenca por grupo, sem `company_id`/`is_primary`). Migrations reescritas (nao estavam em producao). Models, enums (`GroupLicenseStatus`, `GroupLicenseInvoiceStatus`), Actions (`RegisterGroupLicense`, `IssueGroupLicenseInvoice`, `MarkGroupLicenseInvoiceAsPaid`), Data e chaves de config (`billing.group_license_*`) renomeados.
+- **`Subscription` removido** (model + migration): a `GroupLicense` e o unico conceito de cobranca por grupo. Onboarding cria a licenca via `RegisterGroupLicense`; `CompanyObserver` deixou de criar licenca e so define `groups.primary_company_id`.
+- **`EnsureGroupLicenseAllowsWrite`** (ex-`EnsureCompanyLicenseAllowsWrite`) resolve a licenca por `current_group_id`; status de bloqueio `group_license_blocked`. Composer do layout e painel `/admin` (lista com status/MRR da licenca do grupo, detalhe com 1 licenca + empresas) ajustados.
+- **Modulo de empresas (`/empresas`)**: CRUD para `owner`/`admin` do grupo com `CompanyPolicy`. Actions `CreateCompany` (semeia plano de contas + conta Caixa, sem cobranca), `UpdateCompany`, `DeactivateCompany` (bloqueia desativar a principal e a empresa ativa). Requests `StoreCompanyRequest`/`UpdateCompanyRequest`, controllers single-action e views (index/create/edit/show) seguindo `frotika-ui`, com busca de CNPJ reaproveitando `LookupCnpjController`.
+
+### Validacoes da etapa 0.15
+
+- `vendor/bin/pint`
+- `vendor/bin/phpstan analyse`
+- `composer test`

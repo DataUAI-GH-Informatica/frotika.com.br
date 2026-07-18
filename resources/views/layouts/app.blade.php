@@ -15,7 +15,6 @@
         $topbarCompanies = $topbarCompanies ?? collect();
         $topbarCurrentCompanyId = $topbarCurrentCompanyId ?? null;
         $topbarCurrentCompanyName = $topbarCurrentCompanyName ?? 'Empresa ativa';
-        $topbarCompanyStatusMarkers = $topbarCompanyStatusMarkers ?? [];
         $licenseBanner = $licenseBanner ?? null;
 
         $licenseStatusChip = null;
@@ -44,6 +43,9 @@
                 ['label' => 'Contas bancárias', 'route' => null],
             ],
             'Análise' => [['label' => 'DRE veicular', 'route' => null]],
+            'Configurações' => [
+                ['label' => 'Empresas', 'route' => 'companies.index', 'active' => 'companies.*'],
+            ],
         ];
 
         if (($isPlatformAdmin ?? false) === true) {
@@ -129,14 +131,8 @@
                                 class="h-9 min-w-56 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                                 onchange="this.form.requestSubmit()">
                                 @foreach ($topbarCompanies as $companyOption)
-                                    @php
-                                        $companyStatusMarker =
-                                            $topbarCompanyStatusMarkers[$companyOption->getKey()] ?? null;
-                                    @endphp
                                     <option value="{{ $companyOption->getKey() }}" @selected((int) $topbarCurrentCompanyId === $companyOption->getKey())>
-                                        {{ $companyOption->getAttribute('trade_name') }}@if ($companyStatusMarker)
-                                            [{{ $companyStatusMarker }}]
-                                        @endif
+                                        {{ $companyOption->getAttribute('trade_name') }}
                                     </option>
                                 @endforeach
                             </select>
@@ -180,7 +176,7 @@
                 @if ($licenseBanner)
                     <div class="mb-4 rounded-md border border-warning-500/40 bg-warning-50 px-4 py-3">
                         <p class="text-sm font-semibold text-warning-700">
-                            Licença da empresa em {{ $licenseBanner['status_label'] }}. Operações de escrita estão
+                            Licença do grupo em {{ $licenseBanner['status_label'] }}. Operações de escrita estão
                             bloqueadas.
                         </p>
 

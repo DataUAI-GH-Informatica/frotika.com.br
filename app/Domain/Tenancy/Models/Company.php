@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Tenancy\Models;
 
-use App\Domain\Billing\Models\CompanyLicense;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Company extends Model
@@ -33,13 +31,5 @@ final class Company extends Model
     {
         return $this->belongsToMany(User::class)
             ->withTimestamps();
-    }
-
-    /**
-     * @return HasOne<CompanyLicense, $this>
-     */
-    public function license(): HasOne
-    {
-        return $this->hasOne(CompanyLicense::class);
     }
 }

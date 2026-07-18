@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
-use App\Domain\Billing\Models\CompanyLicense;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Domain\Tenancy\Models\Group;
 use Illuminate\Contracts\View\View;
 
@@ -14,12 +14,14 @@ final class ShowGroupController
     {
         $group->load(['owner:id,name,email']);
 
-        $licenses = CompanyLicense::query()
+        $license = GroupLicense::query()
             ->where('group_id', $group->getKey())
-            ->with(['company:id,trade_name,cnpj', 'latestInvoice'])
-            ->orderByDesc('is_primary')
-            ->orderBy('company_id')
-            ->get();
+            ->with('latestInvoice')
+            ->first();
+
+        $companies = $group->companies()
+            ->orderByDesc('id')
+            ->get(['id', 'group_id', 'trade_name', 'legal_name', 'cnpj', 'city', 'state']);
 
         $users = $group->users()
             ->orderBy('name')
@@ -27,9 +29,10 @@ final class ShowGroupController
 
         return view('platform.groups.show', [
             'group' => $group,
-            'licenses' => $licenses,
+            'license' => $license,
+            'companies' => $companies,
             'users' => $users,
-            'defaultMonthlyPriceCents' => (int) config('billing.company_license_monthly_price_cents', 9900),
+            'defaultMonthlyPriceCents' => (int) config('billing.group_license_monthly_price_cents', 9900),
         ]);
     }
 }

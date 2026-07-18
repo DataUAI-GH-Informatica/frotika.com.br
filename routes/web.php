@@ -12,15 +12,22 @@ use App\Http\Controllers\Auth\ShowLoginController;
 use App\Http\Controllers\Auth\ShowResetPasswordController;
 use App\Http\Controllers\Auth\ShowVerifyEmailController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Tenancy\CreateCompanyController;
+use App\Http\Controllers\Tenancy\DeactivateCompanyController;
+use App\Http\Controllers\Tenancy\ListCompaniesController;
 use App\Http\Controllers\Tenancy\LookupCnpjController;
 use App\Http\Controllers\Tenancy\RegisterOwnerAndCompanyController;
+use App\Http\Controllers\Tenancy\ShowCompanyController;
+use App\Http\Controllers\Tenancy\ShowCreateCompanyController;
+use App\Http\Controllers\Tenancy\ShowEditCompanyController;
 use App\Http\Controllers\Tenancy\ShowRegisterController;
 use App\Http\Controllers\Tenancy\SwitchCurrentCompanyController;
-use App\Http\Middleware\EnsureCompanyLicenseAllowsWrite;
+use App\Http\Controllers\Tenancy\UpdateCompanyController;
+use App\Http\Middleware\EnsureGroupLicenseAllowsWrite;
 use App\Http\Middleware\EnsurePlatformAdmin;
-use App\Platform\Http\Controllers\IssueCompanyLicenseInvoiceController;
+use App\Platform\Http\Controllers\IssueGroupLicenseInvoiceController;
 use App\Platform\Http\Controllers\ListGroupsController;
-use App\Platform\Http\Controllers\MarkCompanyLicenseInvoicePaidController;
+use App\Platform\Http\Controllers\MarkGroupLicenseInvoicePaidController;
 use App\Platform\Http\Controllers\ShowGroupController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,9 +58,29 @@ Route::middleware('auth')->group(function (): void {
         ->middleware(['signed', 'throttle:6,1'])
         ->name('verification.verify');
 
-    Route::middleware(['verified', EnsureCompanyLicenseAllowsWrite::class])->group(function (): void {
+    Route::middleware(['verified', EnsureGroupLicenseAllowsWrite::class])->group(function (): void {
         Route::view('/painel', 'dashboard')->name('dashboard');
         Route::post('/empresa-atual', SwitchCurrentCompanyController::class)->name('tenancy.switch-company');
+
+        Route::get('/empresas', ListCompaniesController::class)->name('companies.index');
+        Route::get('/empresas/nova', ShowCreateCompanyController::class)->name('companies.create');
+        Route::post('/empresas', CreateCompanyController::class)->name('companies.store');
+        Route::get('/empresas/cnpj/{cnpj}', LookupCnpjController::class)
+            ->whereNumber('cnpj')
+            ->middleware('throttle:20,1')
+            ->name('companies.cnpj');
+        Route::get('/empresas/{company}', ShowCompanyController::class)
+            ->whereNumber('company')
+            ->name('companies.show');
+        Route::get('/empresas/{company}/editar', ShowEditCompanyController::class)
+            ->whereNumber('company')
+            ->name('companies.edit');
+        Route::put('/empresas/{company}', UpdateCompanyController::class)
+            ->whereNumber('company')
+            ->name('companies.update');
+        Route::delete('/empresas/{company}', DeactivateCompanyController::class)
+            ->whereNumber('company')
+            ->name('companies.destroy');
     });
 
     Route::middleware(['verified', EnsurePlatformAdmin::class])
@@ -62,9 +89,9 @@ Route::middleware('auth')->group(function (): void {
         ->group(function (): void {
             Route::get('/', ListGroupsController::class)->name('groups.index');
             Route::get('/grupos/{group}', ShowGroupController::class)->name('groups.show');
-            Route::post('/licencas/{license}/boletos', IssueCompanyLicenseInvoiceController::class)
+            Route::post('/licencas/{license}/boletos', IssueGroupLicenseInvoiceController::class)
                 ->name('licenses.issue');
-            Route::post('/boletos/{invoice}/quitar', MarkCompanyLicenseInvoicePaidController::class)
+            Route::post('/boletos/{invoice}/quitar', MarkGroupLicenseInvoicePaidController::class)
                 ->name('invoices.mark-paid');
         });
 

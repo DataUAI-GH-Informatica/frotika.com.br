@@ -7,7 +7,7 @@ namespace App\Platform\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
-final class MarkCompanyLicenseInvoicePaidRequest extends FormRequest
+final class MarkGroupLicenseInvoicePaidRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
-use App\Domain\Billing\Actions\IssueManualCompanyLicenseInvoice;
-use App\Domain\Billing\Data\IssueManualCompanyLicenseInvoiceData;
-use App\Domain\Billing\Models\CompanyLicense;
+use App\Domain\Billing\Actions\IssueGroupLicenseInvoice;
+use App\Domain\Billing\Data\IssueGroupLicenseInvoiceData;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Models\User;
-use App\Platform\Http\Requests\IssueCompanyLicenseInvoiceRequest;
+use App\Platform\Http\Requests\IssueGroupLicenseInvoiceRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 
-final class IssueCompanyLicenseInvoiceController
+final class IssueGroupLicenseInvoiceController
 {
     public function __invoke(
-        IssueCompanyLicenseInvoiceRequest $request,
-        CompanyLicense $license,
-        IssueManualCompanyLicenseInvoice $action,
+        IssueGroupLicenseInvoiceRequest $request,
+        GroupLicense $license,
+        IssueGroupLicenseInvoice $action,
     ): RedirectResponse {
         $user = $request->user();
 
@@ -35,7 +35,7 @@ final class IssueCompanyLicenseInvoiceController
         $action->execute(
             $user,
             $license,
-            new IssueManualCompanyLicenseInvoiceData(
+            new IssueGroupLicenseInvoiceData(
                 amountCents: (int) $validated['amount_cents'],
                 dueDate: $dueDate,
                 referenceMonth: $referenceMonth,
@@ -47,6 +47,6 @@ final class IssueCompanyLicenseInvoiceController
 
         return redirect()
             ->route('platform.groups.show', ['group' => $license->group_id])
-            ->with('status', 'Boleto lançado com sucesso para a empresa selecionada.');
+            ->with('status', 'Boleto lançado com sucesso para o grupo.');
     }
 }

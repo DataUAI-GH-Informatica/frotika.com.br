@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Enums;
 
-enum CompanyLicenseStatus: string
+enum GroupLicenseStatus: string
 {
     case Trialing = 'trialing';
     case PendingPayment = 'pending_payment';

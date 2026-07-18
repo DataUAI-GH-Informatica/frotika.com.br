@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Actions;
 
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
-final class MarkCompanyLicenseInvoiceAsPaid
+final class MarkGroupLicenseInvoiceAsPaid
 {
-    public function execute(User $actor, CompanyLicenseInvoice $invoice, ?CarbonImmutable $paidAt, ?string $note): CompanyLicenseInvoice
+    public function execute(User $actor, GroupLicenseInvoice $invoice, ?CarbonImmutable $paidAt, ?string $note): GroupLicenseInvoice
     {
         Gate::forUser($actor)->authorize('access-platform');
 
-        /** @var CompanyLicenseInvoice $updated */
-        $updated = DB::transaction(function () use ($actor, $invoice, $paidAt, $note): CompanyLicenseInvoice {
+        /** @var GroupLicenseInvoice $updated */
+        $updated = DB::transaction(function () use ($actor, $invoice, $paidAt, $note): GroupLicenseInvoice {
             $effectivePaidAt = $paidAt ?? CarbonImmutable::now();
 
             $invoice->forceFill([
-                'status' => CompanyLicenseInvoiceStatus::Paid,
+                'status' => GroupLicenseInvoiceStatus::Paid,
                 'paid_at' => $effectivePaidAt,
                 'paid_note' => $note,
                 'confirmed_by_user_id' => $actor->getKey(),
@@ -31,7 +31,7 @@ final class MarkCompanyLicenseInvoiceAsPaid
 
             $license = $invoice->license()->firstOrFail();
             $license->forceFill([
-                'status' => CompanyLicenseStatus::Active,
+                'status' => GroupLicenseStatus::Active,
                 'activated_at' => $license->activated_at ?? $effectivePaidAt,
                 'suspended_at' => null,
             ])->save();

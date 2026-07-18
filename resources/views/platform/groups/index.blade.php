@@ -4,7 +4,7 @@
 
 @section('content')
     <x-ui.page-header title="Grupos cadastrados"
-        subtitle="Empresas clientes da plataforma, licenças e faturamento recorrente" />
+        subtitle="Empresas clientes da plataforma, licença do grupo e faturamento recorrente" />
 
     <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div class="rounded-lg border border-slate-200 bg-white p-4">
@@ -38,12 +38,8 @@
                             Responsável</th>
                         <th class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                             Empresas</th>
-                        <th class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Trial</th>
-                        <th class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Ativas</th>
-                        <th class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            Pendentes</th>
+                        <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            Licença</th>
                         <th class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                             MRR</th>
                     </tr>
@@ -66,20 +62,23 @@
                                 @endif
                             </td>
                             <td class="px-3 py-2 text-right font-mono text-slate-900 tabular">{{ $row['companies_count'] }}</td>
-                            <td class="px-3 py-2 text-right font-mono text-slate-600 tabular">{{ $row['trial_count'] }}</td>
-                            <td class="px-3 py-2 text-right font-mono text-success-600 tabular">{{ $row['active_count'] }}</td>
-                            <td @class([
-                                'px-3 py-2 text-right font-mono tabular',
-                                'text-danger-600' => $row['pending_count'] > 0,
-                                'text-slate-400' => $row['pending_count'] === 0,
-                            ])>{{ $row['pending_count'] }}</td>
+                            <td class="px-3 py-2">
+                                <span @class([
+                                    'inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold',
+                                    'border-success-200 bg-success-50 text-success-700' => $row['status_value'] === 'active',
+                                    'border-slate-200 bg-slate-50 text-slate-600' => $row['status_value'] === 'trialing',
+                                    'border-warning-300 bg-warning-50 text-warning-700' => $row['status_value'] === 'pending_payment',
+                                    'border-danger-300 bg-danger-50 text-danger-700' => $row['status_value'] === 'suspended',
+                                    'border-slate-200 bg-slate-50 text-slate-400' => $row['status_value'] === null,
+                                ])>{{ $row['status_label'] }}</span>
+                            </td>
                             <td class="px-3 py-2 text-right font-mono text-slate-900 tabular">
                                 {{ Format::moneyDecimal($row['mrr_cents'] / 100) }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-3 py-6 text-center text-sm text-slate-500">
+                            <td colspan="5" class="px-3 py-6 text-center text-sm text-slate-500">
                                 Nenhum grupo cliente cadastrado.
                             </td>
                         </tr>

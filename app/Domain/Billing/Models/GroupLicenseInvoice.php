@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Models;
 
-use App\Domain\Billing\Enums\CompanyLicenseInvoiceStatus;
-use App\Domain\Tenancy\Models\Company;
+use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
 use App\Domain\Tenancy\Models\Group;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -13,9 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property CompanyLicenseInvoiceStatus $status
+ * @property GroupLicenseInvoiceStatus $status
  */
-class CompanyLicenseInvoice extends Model
+class GroupLicenseInvoice extends Model
 {
     use SoftDeletes;
 
@@ -24,7 +23,7 @@ class CompanyLicenseInvoice extends Model
     protected function casts(): array
     {
         return [
-            'status' => CompanyLicenseInvoiceStatus::class,
+            'status' => GroupLicenseInvoiceStatus::class,
             'reference_month' => 'date',
             'due_date' => 'date',
             'paid_at' => 'datetime',
@@ -32,11 +31,11 @@ class CompanyLicenseInvoice extends Model
     }
 
     /**
-     * @return BelongsTo<CompanyLicense, $this>
+     * @return BelongsTo<GroupLicense, $this>
      */
     public function license(): BelongsTo
     {
-        return $this->belongsTo(CompanyLicense::class, 'company_license_id');
+        return $this->belongsTo(GroupLicense::class, 'group_license_id');
     }
 
     /**
@@ -45,14 +44,6 @@ class CompanyLicenseInvoice extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
-    }
-
-    /**
-     * @return BelongsTo<Company, $this>
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
     }
 
     /**

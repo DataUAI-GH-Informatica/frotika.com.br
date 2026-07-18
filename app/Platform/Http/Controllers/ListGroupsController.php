@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
-use App\Domain\Billing\Enums\CompanyLicenseStatus;
+use App\Domain\Billing\Enums\GroupLicenseStatus;
+use App\Domain\Billing\Models\GroupLicense;
 use App\Domain\Tenancy\Enums\GroupType;
 use App\Domain\Tenancy\Models\Group;
 use Illuminate\Contracts\View\View;
@@ -16,25 +17,27 @@ final class ListGroupsController
         $groups = Group::query()
             ->where('type', GroupType::Customer->value)
             ->withCount('companies')
-            ->with(['owner:id,name,email', 'companyLicenses:id,group_id,status,monthly_price_cents'])
+            ->with(['owner:id,name,email', 'license'])
             ->orderBy('name')
             ->get();
 
         $rows = $groups->map(static function (Group $group): array {
-            $licenses = $group->companyLicenses;
-
-            $activeLicenses = $licenses->where('status', CompanyLicenseStatus::Active);
+            /** @var GroupLicense|null $license */
+            $license = $group->license;
+            $status = $license?->status;
+            $isActive = $status === GroupLicenseStatus::Active;
+            $isPending = in_array($status, [
+                GroupLicenseStatus::PendingPayment,
+                GroupLicenseStatus::Suspended,
+            ], true);
 
             return [
                 'group' => $group,
                 'companies_count' => (int) $group->getAttribute('companies_count'),
-                'active_count' => $activeLicenses->count(),
-                'pending_count' => $licenses->whereIn('status', [
-                    CompanyLicenseStatus::PendingPayment,
-                    CompanyLicenseStatus::Suspended,
-                ])->count(),
-                'trial_count' => $licenses->where('status', CompanyLicenseStatus::Trialing)->count(),
-                'mrr_cents' => (int) $activeLicenses->sum('monthly_price_cents'),
+                'status_label' => $status?->label() ?? 'Sem licença',
+                'status_value' => $status?->value,
+                'is_pending' => $isPending,
+                'mrr_cents' => $license !== null && $isActive ? (int) $license->monthly_price_cents : 0,
             ];
         });
 
@@ -42,7 +45,7 @@ final class ListGroupsController
             'rows' => $rows,
             'totalGroups' => $groups->count(),
             'totalMrrCents' => (int) $rows->sum('mrr_cents'),
-            'totalPending' => (int) $rows->sum('pending_count'),
+            'totalPending' => (int) $rows->where('is_pending', true)->count(),
         ]);
     }
 }

@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Platform\Http\Controllers;
 
-use App\Domain\Billing\Actions\MarkCompanyLicenseInvoiceAsPaid;
-use App\Domain\Billing\Models\CompanyLicenseInvoice;
+use App\Domain\Billing\Actions\MarkGroupLicenseInvoiceAsPaid;
+use App\Domain\Billing\Models\GroupLicenseInvoice;
 use App\Models\User;
-use App\Platform\Http\Requests\MarkCompanyLicenseInvoicePaidRequest;
+use App\Platform\Http\Requests\MarkGroupLicenseInvoicePaidRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 
-final class MarkCompanyLicenseInvoicePaidController
+final class MarkGroupLicenseInvoicePaidController
 {
     public function __invoke(
-        MarkCompanyLicenseInvoicePaidRequest $request,
-        CompanyLicenseInvoice $invoice,
-        MarkCompanyLicenseInvoiceAsPaid $action,
+        MarkGroupLicenseInvoicePaidRequest $request,
+        GroupLicenseInvoice $invoice,
+        MarkGroupLicenseInvoiceAsPaid $action,
     ): RedirectResponse {
         $user = $request->user();
 
