@@ -34,6 +34,13 @@ use App\Http\Controllers\Fleet\ShowEditVehicleController;
 use App\Http\Controllers\Fleet\ShowVehicleController;
 use App\Http\Controllers\Fleet\StoreVehicleController;
 use App\Http\Controllers\Fleet\UpdateVehicleController;
+use App\Http\Controllers\Fuelings\DeleteFuelingController;
+use App\Http\Controllers\Fuelings\ListFuelingsController;
+use App\Http\Controllers\Fuelings\ShowCreateFuelingController;
+use App\Http\Controllers\Fuelings\ShowEditFuelingController;
+use App\Http\Controllers\Fuelings\ShowFuelingController;
+use App\Http\Controllers\Fuelings\StoreFuelingController;
+use App\Http\Controllers\Fuelings\UpdateFuelingController;
 use App\Http\Controllers\Partners\DeactivateBusinessPartnerController;
 use App\Http\Controllers\Partners\ListBusinessPartnersController;
 use App\Http\Controllers\Partners\ShowBusinessPartnerController;
@@ -185,6 +192,22 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/veiculos/{vehicle}', DeactivateVehicleController::class)
             ->whereNumber('vehicle')
             ->name('vehicles.destroy');
+
+        Route::get('/abastecimentos', ListFuelingsController::class)->name('fuelings.index');
+        Route::get('/abastecimentos/novo', ShowCreateFuelingController::class)->name('fuelings.create');
+        Route::post('/abastecimentos', StoreFuelingController::class)->name('fuelings.store');
+        Route::get('/abastecimentos/{fueling}', ShowFuelingController::class)
+            ->whereNumber('fueling')
+            ->name('fuelings.show');
+        Route::get('/abastecimentos/{fueling}/editar', ShowEditFuelingController::class)
+            ->whereNumber('fueling')
+            ->name('fuelings.edit');
+        Route::put('/abastecimentos/{fueling}', UpdateFuelingController::class)
+            ->whereNumber('fueling')
+            ->name('fuelings.update');
+        Route::delete('/abastecimentos/{fueling}', DeleteFuelingController::class)
+            ->whereNumber('fueling')
+            ->name('fuelings.destroy');
 
         Route::get('/ct-e', ListCteController::class)->name('cte.index');
         Route::get('/ct-e/importar', ShowImportCteController::class)->name('cte.import');

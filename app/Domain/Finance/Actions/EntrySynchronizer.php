@@ -6,12 +6,16 @@ namespace App\Domain\Finance\Actions;
 
 use App\Domain\Finance\Enums\FinancialEntryStatus;
 use App\Domain\Finance\Enums\FinancialEntryType;
+use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\FinancialEntry;
+use App\Domain\Fuelings\Enums\FuelProduct;
+use App\Domain\Fuelings\Models\Fueling;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
 use App\Domain\Trips\Enums\CteStatus;
 use App\Domain\Trips\Models\CteDocument;
+use App\Support\Format;
 use App\Support\Tenancy\TenantContext;
 use RuntimeException;
 
@@ -27,9 +31,17 @@ final class EntrySynchronizer
     /** Categoria analítica de receita de fretes (blueprint 14.1). */
     private const FREIGHT_REVENUE_CODE = '1.1';
 
+    /** Custos variáveis de abastecimento (blueprint 6.3 / 14.1). */
+    private const FUEL_COST_CODE = '3.1';
+
+    private const ARLA_COST_CODE = '3.2';
+
+    private const OIL_COST_CODE = '3.6';
+
     public function __construct(
         private readonly TenantContext $tenant,
         private readonly SeedDefaultFinancialCategories $seedDefaultFinancialCategories,
+        private readonly RecalculateBankAccountCurrentBalance $recalculateBankAccountCurrentBalance,
     ) {}
 
     public function syncFromCte(CteDocument $cte): void
@@ -111,6 +123,197 @@ final class EntrySynchronizer
                 ...$attributes,
             ]);
         });
+    }
+
+    /**
+     * Abastecimento vira despesa (regra 7). À vista sai do caixa na hora
+     * (liquidado na conta padrão, paid_at = fueled_at); a prazo vira uma conta a
+     * pagar (previsto). Uma vez liquidado/conciliado, reimportar/editar não
+     * desfaz a baixa — o caixa manda.
+     */
+    public function syncFromFueling(Fueling $fueling): void
+    {
+        $company = Company::query()->find($fueling->getAttribute('company_id'));
+
+        if (! $company instanceof Company) {
+            return;
+        }
+
+        $this->tenant->runFor($company, function () use ($fueling, $company): void {
+            $existing = FinancialEntry::query()
+                ->where('sourceable_type', Fueling::class)
+                ->where('sourceable_id', $fueling->getKey())
+                ->first();
+
+            /** @var array<int, true> $accountsToRecalculate */
+            $accountsToRecalculate = [];
+
+            if ($existing instanceof FinancialEntry) {
+                $existingAccountId = $existing->getAttribute('bank_account_id');
+
+                if ($existingAccountId !== null) {
+                    $accountsToRecalculate[(int) $existingAccountId] = true;
+                }
+            }
+
+            if ($fueling->trashed()) {
+                if ($existing instanceof FinancialEntry && $existing->status !== FinancialEntryStatus::Canceled) {
+                    $existing->update(['status' => FinancialEntryStatus::Canceled->value]);
+                }
+
+                $this->recalculateAccounts($company, $accountsToRecalculate);
+
+                return;
+            }
+
+            $amountCents = (int) $fueling->getAttribute('total_cents');
+
+            if ($amountCents <= 0) {
+                return;
+            }
+
+            $createdBy = $this->resolveFuelingCreatedBy($fueling, $company);
+
+            if ($createdBy === null) {
+                return;
+            }
+
+            $category = $this->resolveCategoryByCode($company, $this->fuelingCategoryCode($fueling->product));
+            $fueledAt = $fueling->fueled_at;
+
+            $paymentMethod = $fueling->payment_method;
+            // À vista só liquida se houver conta padrão para receber a baixa;
+            // sem conta padrão, cai como conta a pagar (previsto).
+            $defaultAccount = $paymentMethod->isCashLike() ? $this->defaultBankAccount() : null;
+            $isSettled = $defaultAccount !== null;
+
+            $attributes = [
+                'financial_category_id' => $category->getKey(),
+                'bank_account_id' => $defaultAccount?->getKey(),
+                'vehicle_id' => $fueling->getAttribute('vehicle_id'),
+                'driver_id' => $fueling->getAttribute('driver_id'),
+                'trip_id' => $fueling->getAttribute('trip_id'),
+                'type' => FinancialEntryType::Expense->value,
+                'description' => $this->fuelingDescription($fueling),
+                'document_number' => $fueling->getAttribute('invoice_number'),
+                'competence_date' => $fueledAt->toDateString(),
+                'due_date' => $fueledAt->toDateString(),
+                'paid_at' => $isSettled ? $fueledAt->toDateString() : null,
+                'amount_cents' => $amountCents,
+                'status' => $isSettled ? FinancialEntryStatus::Settled->value : FinancialEntryStatus::Forecast->value,
+                'payment_method' => $isSettled ? $paymentMethod->toFinancialEntryPaymentMethod()->value : null,
+                'recurrence_id' => null,
+            ];
+
+            if ($existing instanceof FinancialEntry) {
+                if ($existing->status === FinancialEntryStatus::Settled) {
+                    // Baixa é fato de caixa; editar o abastecimento não desfaz a
+                    // liquidação já conciliada.
+                    unset(
+                        $attributes['status'],
+                        $attributes['paid_at'],
+                        $attributes['bank_account_id'],
+                        $attributes['payment_method'],
+                    );
+                }
+
+                $existing->update($attributes);
+            } else {
+                FinancialEntry::query()->create([
+                    'company_id' => $company->getKey(),
+                    'sourceable_type' => Fueling::class,
+                    'sourceable_id' => $fueling->getKey(),
+                    'created_by' => $createdBy,
+                    ...$attributes,
+                ]);
+            }
+
+            if ($defaultAccount !== null) {
+                $accountsToRecalculate[(int) $defaultAccount->getKey()] = true;
+            }
+
+            $this->recalculateAccounts($company, $accountsToRecalculate);
+        });
+    }
+
+    /**
+     * @param  array<int, true>  $accountIds
+     */
+    private function recalculateAccounts(Company $company, array $accountIds): void
+    {
+        foreach (array_keys($accountIds) as $accountId) {
+            $this->recalculateBankAccountCurrentBalance->execute($company, $accountId);
+        }
+    }
+
+    private function fuelingCategoryCode(FuelProduct $product): string
+    {
+        return match ($product) {
+            FuelProduct::Arla32 => self::ARLA_COST_CODE,
+            FuelProduct::Oil => self::OIL_COST_CODE,
+            default => self::FUEL_COST_CODE,
+        };
+    }
+
+    private function fuelingDescription(Fueling $fueling): string
+    {
+        $station = $fueling->getAttribute('station_name');
+
+        $description = sprintf(
+            'Abastecimento · %s · %s',
+            $fueling->product->label(),
+            Format::liters((float) $fueling->getAttribute('liters')),
+        );
+
+        if (is_string($station) && $station !== '') {
+            $description .= ' · '.$station;
+        }
+
+        return mb_substr($description, 0, 200);
+    }
+
+    private function defaultBankAccount(): ?BankAccount
+    {
+        return BankAccount::query()
+            ->where('is_default', true)
+            ->where('active', true)
+            ->first();
+    }
+
+    private function resolveFuelingCreatedBy(Fueling $fueling, Company $company): ?int
+    {
+        $createdBy = $fueling->getAttribute('created_by');
+
+        if ($createdBy !== null) {
+            return (int) $createdBy;
+        }
+
+        $group = Group::query()->find($company->getAttribute('group_id'));
+
+        return $group?->getAttribute('owner_user_id') === null
+            ? null
+            : (int) $group->getAttribute('owner_user_id');
+    }
+
+    private function resolveCategoryByCode(Company $company, string $code): FinancialCategory
+    {
+        $category = FinancialCategory::query()->where('code', $code)->first();
+
+        if ($category instanceof FinancialCategory) {
+            return $category;
+        }
+
+        // Auto-cura empresas legadas (sem plano de contas): semeia e tenta de novo.
+        if (FinancialCategory::query()->count() === 0) {
+            $this->seedDefaultFinancialCategories->execute($company);
+            $category = FinancialCategory::query()->where('code', $code)->first();
+        }
+
+        if (! $category instanceof FinancialCategory) {
+            throw new RuntimeException(sprintf('Categoria financeira (%s) não encontrada para a empresa ativa.', $code));
+        }
+
+        return $category;
     }
 
     private function shouldCancel(CteDocument $cte): bool

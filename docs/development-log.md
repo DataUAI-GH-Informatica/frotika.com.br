@@ -478,3 +478,35 @@ Resolve a tensao aberta na 0.22. Decisao do usuario: **conta-alvo opcional no pr
 - `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
 - `composer test` (169 testes)
 - `npm run build`
+
+## 2026-07-18 - Etapa 0.24 (abastecimentos)
+
+Fase 4. Modulo de abastecimentos com calculo de consumo (regra 8) e despesa sincronizada no financeiro (regra 7). Escopo de campos completo (blueprint 5.4); motorista/viagem/posto-parceiro ficam para quando esses cadastros existirem (colunas nulaveis ja criadas).
+
+### Entregas da etapa 0.24
+
+- **Enums** `FuelProduct` (diesel_s10/s500, arla32, gasolina, etanol, GNV, oleo; `isFuel()` exclui arla32 e oleo), `FuelTank` (principal/auxiliar), `FuelingPaymentMethod` (dinheiro/pix/cartao de abastecimento/credito/debito/faturado; `isCashLike()` e `toFinancialEntryPaymentMethod()`).
+- **Migration + model `Fueling`** (`BelongsToCompany`, soft delete, casts; `fueled_at` datetime, `liters`/`price_per_liter` decimal(10,3), `total_cents` bigint, `km_since_last`/`km_per_liter` calculados). Indice (`company_id`,`vehicle_id`,`fueled_at`).
+- **`FuelConsumptionCalculator`** (regra 8 exatamente): so fecha entre dois `full_tank` do mesmo tanque; arla32 e oleo nunca entram (nem litros, nem abrem/fecham intervalo); litros do intervalo = soma dos combustiveis posteriores ao ultimo tanque cheio ate o atual; sem tanque cheio anterior -> `null` (nunca zero). Recalcula a serie inteira do veiculo por tanque, `saveQuietly` para nao reentrar no observer. **Teste escrito antes** (`FuelConsumptionCalculatorTest`).
+- **Actions** `CreateFueling`/`UpdateFueling`/`DeleteFueling` (+ `FuelingData` DTO e `FuelingPolicy` owner/admin): validam odometro >= ultimo conhecido do veiculo (bloqueia regressivo salvo confirmacao explicita), derivam preco/litro do total quando ausente, atualizam `odometer_current` do veiculo e disparam o recalculo de consumo.
+- **`EntrySynchronizer::syncFromFueling`** + `FuelingObserver`: abastecimento vira despesa (arla32->3.2, oleo->3.6, demais combustiveis->3.1). A vista (dinheiro/pix/debito/cartao de abastecimento) liquida na conta padrao com `paid_at = fueled_at`; a prazo (credito/faturado) vira conta a pagar (previsto). Preserva a baixa ja conciliada ao reeditar (como no CT-e) e recalcula o saldo da conta afetada. Se nao houver conta padrao, a vista cai como previsto.
+- **HTTP + telas** (`/abastecimentos`): requests `Store`/`Update` (reais->centavos via `Brl`, decimais pt-BR normalizados), controllers single-action (list com filtros veiculo/produto/periodo + totais de litros e valor, create/store/show/edit/update/destroy), views `index`/`_form`/`create`/`edit`/`show` (consumo, custo, posto e link para o lancamento). Nav "Abastecimentos" ligada; botao "+ Abastecimento" da topbar aponta para o novo cadastro.
+- **Teste `FuelingManagementTest`**: a vista liquida na conta padrao e reduz o saldo; faturado vira conta a pagar; arla cai na 3.2 e nao calcula consumo; consumo fecha entre dois tanques cheios; odometro regressivo bloqueia sem confirmacao; excluir cancela o lancamento e devolve o saldo; isolamento por grupo.
+
+### Decisoes da etapa 0.24
+
+- **Baixa a vista na conta padrao** (escolha do usuario): evita deixar toda compra de combustivel como "a pagar", mas mantem a conciliacao — sem conta padrao, cai como previsto.
+- Editar de a vista para faturado (ou vice-versa) num lancamento **ja liquidado** respeita a baixa existente (caixa manda); o usuario ajusta manualmente se preciso.
+- Mapeamento de `oil` -> categoria 3.6 (Lubrificantes), nao previsto explicitamente na 6.3 mas coerente com o plano de contas.
+
+### Pendencias conhecidas
+
+- Sinalizacao de km/l fora de +-40% da media dos ultimos 5 (aviso, nao bloqueio) ainda nao exibida na listagem.
+- Vinculo de motorista, viagem e posto (parceiro) ao abastecimento fica para quando esses cadastros/telas existirem.
+
+### Validacoes da etapa 0.24
+
+- `vendor/bin/pint`
+- `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
+- `composer test` (179 testes)
+- `npm run build`

@@ -34,7 +34,7 @@
                 ['label' => 'Painel', 'route' => 'dashboard', 'active' => 'dashboard'],
                 ['label' => 'Viagens', 'route' => null],
                 ['label' => 'CT-e', 'route' => 'cte.index', 'active' => 'cte.*'],
-                ['label' => 'Abastecimentos', 'route' => null],
+                ['label' => 'Abastecimentos', 'route' => 'fuelings.index', 'active' => 'fuelings.*'],
                 ['label' => 'Manutenções', 'route' => null],
             ],
             'Frota' => [
@@ -166,7 +166,7 @@
                     <div
                         class="hidden items-center gap-1 xl:flex {{ $topbarCompanies->count() > 1 ? '' : 'ml-auto' }}">
                         <x-ui.button variant="ghost" size="sm">+ Viagem</x-ui.button>
-                        <x-ui.button variant="ghost" size="sm">+ Abastecimento</x-ui.button>
+                        <x-ui.link-button href="{{ route('fuelings.create') }}" variant="ghost" size="sm">+ Abastecimento</x-ui.link-button>
                         <x-ui.link-button href="{{ route('cte.import') }}" variant="ghost" size="sm">Importar
                             CT-e</x-ui.link-button>
                     </div>
