@@ -117,6 +117,8 @@
                 </x-ui.card>
             </div>
         </main>
+
+        <x-ui.developer-credits-footer />
     </div>
 </body>
 

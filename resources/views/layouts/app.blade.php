@@ -65,8 +65,7 @@
         <aside
             class="hidden lg:flex lg:flex-col lg:justify-between lg:bg-linear-to-b lg:from-brand-950 lg:to-brand-900 lg:px-3 lg:py-4 lg:text-brand-100">
             <div class="space-y-6">
-                <a href="{{ route('dashboard') }}"
-                    class="inline-flex rounded-md px-2 py-1.5 hover:bg-brand-800/60">
+                <a href="{{ route('dashboard') }}" class="inline-flex rounded-md px-2 py-1.5 hover:bg-brand-800/60">
                     <x-ui.brand on="dark" />
                 </a>
 
@@ -162,7 +161,8 @@
 
                     <div
                         class="hidden items-center gap-1 xl:flex {{ $topbarCompanies->count() > 1 ? '' : 'ml-auto' }}">
-                        <x-ui.link-button href="{{ route('fuelings.create') }}" variant="ghost" size="sm">+ Abastecimento</x-ui.link-button>
+                        <x-ui.link-button href="{{ route('fuelings.create') }}" variant="ghost" size="sm">+
+                            Abastecimento</x-ui.link-button>
                         <x-ui.link-button href="{{ route('cte.import') }}" variant="ghost" size="sm">Importar
                             CT-e</x-ui.link-button>
                     </div>
@@ -238,6 +238,8 @@
                 </div>
             </main>
 
+            <x-ui.developer-credits-footer class="pb-(--spacing-bottomnav) lg:pb-3" />
+
             <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white lg:hidden safe-b">
                 <div class="grid h-(--spacing-bottomnav) grid-cols-5 px-2">
                     <a href="{{ route('dashboard') }}"
@@ -249,12 +251,11 @@
                         </svg>
                         Início
                     </a>
-                    <a href="{{ route('cte.index') }}"
-                        @class([
-                            'flex flex-col items-center justify-center gap-0.5 text-2xs',
-                            'font-medium text-brand-700' => request()->routeIs('cte.*'),
-                            'text-slate-400' => ! request()->routeIs('cte.*'),
-                        ])>
+                    <a href="{{ route('cte.index') }}" @class([
+                        'flex flex-col items-center justify-center gap-0.5 text-2xs',
+                        'font-medium text-brand-700' => request()->routeIs('cte.*'),
+                        'text-slate-400' => !request()->routeIs('cte.*'),
+                    ])>
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.5" aria-hidden="true">
                             <path d="M7 3h7l4 4v14H7z" stroke-linejoin="round" />
@@ -262,7 +263,8 @@
                         </svg>
                         CT-e
                     </a>
-                    <a href="{{ route('financial-entries.create') }}" aria-label="Novo lançamento" class="flex items-center justify-center">
+                    <a href="{{ route('financial-entries.create') }}" aria-label="Novo lançamento"
+                        class="flex items-center justify-center">
                         <span
                             class="inline-flex size-10 items-center justify-center rounded-md bg-brand-700 text-white active:bg-brand-800">
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"

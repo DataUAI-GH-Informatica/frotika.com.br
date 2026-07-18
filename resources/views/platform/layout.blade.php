@@ -18,18 +18,20 @@
             <div class="flex h-14 items-center gap-3 px-4 sm:px-6">
                 <a href="{{ route('platform.groups.index') }}" class="inline-flex items-center gap-2">
                     <x-ui.brand on="dark" />
-                    <span class="rounded-full border border-accent-500/50 bg-accent-500/10 px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest text-accent-300">
+                    <span
+                        class="rounded-full border border-accent-500/50 bg-accent-500/10 px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest text-accent-300">
                         Plataforma
                     </span>
                 </a>
 
                 <nav class="ml-4 hidden items-center gap-1 md:flex">
-                    <a href="{{ route('platform.groups.index') }}"
-                        @class([
-                            'rounded-md px-2.5 py-1.5 text-sm',
-                            'bg-brand-800 font-medium text-white' => request()->routeIs('platform.groups.*'),
-                            'text-brand-100 hover:bg-brand-800/60' => !request()->routeIs('platform.groups.*'),
-                        ])>
+                    <a href="{{ route('platform.groups.index') }}" @class([
+                        'rounded-md px-2.5 py-1.5 text-sm',
+                        'bg-brand-800 font-medium text-white' => request()->routeIs(
+                            'platform.groups.*'),
+                        'text-brand-100 hover:bg-brand-800/60' => !request()->routeIs(
+                            'platform.groups.*'),
+                    ])>
                         Grupos
                     </a>
                 </nav>
@@ -80,6 +82,8 @@
                 @yield('content')
             </div>
         </main>
+
+        <x-ui.developer-credits-footer />
     </div>
 </body>
 

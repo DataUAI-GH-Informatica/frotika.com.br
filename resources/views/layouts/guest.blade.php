@@ -46,6 +46,8 @@
 
         @yield('content')
     </main>
+
+    <x-ui.developer-credits-footer />
 </body>
 
 </html>
