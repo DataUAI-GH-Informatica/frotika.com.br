@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Billing;
+namespace App\Platform\Http\Controllers;
 
 use App\Domain\Billing\Actions\IssueManualCompanyLicenseInvoice;
 use App\Domain\Billing\Data\IssueManualCompanyLicenseInvoiceData;
 use App\Domain\Billing\Models\CompanyLicense;
-use App\Http\Requests\Billing\IssueManualCompanyLicenseInvoiceRequest;
 use App\Models\User;
+use App\Platform\Http\Requests\IssueCompanyLicenseInvoiceRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 
-final class IssueManualCompanyLicenseInvoiceController
+final class IssueCompanyLicenseInvoiceController
 {
     public function __invoke(
-        IssueManualCompanyLicenseInvoiceRequest $request,
+        IssueCompanyLicenseInvoiceRequest $request,
         CompanyLicense $license,
         IssueManualCompanyLicenseInvoice $action,
     ): RedirectResponse {
@@ -46,7 +46,7 @@ final class IssueManualCompanyLicenseInvoiceController
         );
 
         return redirect()
-            ->route('billing.licenses.index')
-            ->with('status', 'Boleto lançado com sucesso para a licença selecionada.');
+            ->route('platform.groups.show', ['group' => $license->group_id])
+            ->with('status', 'Boleto lançado com sucesso para a empresa selecionada.');
     }
 }

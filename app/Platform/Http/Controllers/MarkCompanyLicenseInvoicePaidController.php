@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Billing;
+namespace App\Platform\Http\Controllers;
 
 use App\Domain\Billing\Actions\MarkCompanyLicenseInvoiceAsPaid;
 use App\Domain\Billing\Models\CompanyLicenseInvoice;
-use App\Http\Requests\Billing\MarkCompanyLicenseInvoicePaidRequest;
 use App\Models\User;
+use App\Platform\Http\Requests\MarkCompanyLicenseInvoicePaidRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 
@@ -34,7 +34,7 @@ final class MarkCompanyLicenseInvoicePaidController
         );
 
         return redirect()
-            ->route('billing.licenses.index')
+            ->route('platform.groups.show', ['group' => $invoice->group_id])
             ->with('status', 'Pagamento confirmado manualmente com sucesso.');
     }
 }

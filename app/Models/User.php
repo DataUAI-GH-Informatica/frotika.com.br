@@ -39,6 +39,11 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function isPlatformAdmin(): bool
+    {
+        return (bool) $this->is_platform_admin;
+    }
+
     /**
      * @return BelongsToMany<Company, $this>
      */

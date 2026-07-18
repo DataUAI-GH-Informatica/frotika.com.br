@@ -12,14 +12,16 @@ use App\Http\Controllers\Auth\ShowLoginController;
 use App\Http\Controllers\Auth\ShowResetPasswordController;
 use App\Http\Controllers\Auth\ShowVerifyEmailController;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\Billing\IssueManualCompanyLicenseInvoiceController;
-use App\Http\Controllers\Billing\MarkCompanyLicenseInvoicePaidController;
-use App\Http\Controllers\Billing\ShowCompanyLicensesController;
 use App\Http\Controllers\Tenancy\LookupCnpjController;
 use App\Http\Controllers\Tenancy\RegisterOwnerAndCompanyController;
 use App\Http\Controllers\Tenancy\ShowRegisterController;
 use App\Http\Controllers\Tenancy\SwitchCurrentCompanyController;
 use App\Http\Middleware\EnsureCompanyLicenseAllowsWrite;
+use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Platform\Http\Controllers\IssueCompanyLicenseInvoiceController;
+use App\Platform\Http\Controllers\ListGroupsController;
+use App\Platform\Http\Controllers\MarkCompanyLicenseInvoicePaidController;
+use App\Platform\Http\Controllers\ShowGroupController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
@@ -52,13 +54,19 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware(['verified', EnsureCompanyLicenseAllowsWrite::class])->group(function (): void {
         Route::view('/painel', 'dashboard')->name('dashboard');
         Route::post('/empresa-atual', SwitchCurrentCompanyController::class)->name('tenancy.switch-company');
-
-        Route::get('/assinatura', ShowCompanyLicensesController::class)->name('billing.licenses.index');
-        Route::post('/assinatura/licencas/{license}/boletos', IssueManualCompanyLicenseInvoiceController::class)
-            ->name('billing.licenses.issue');
-        Route::post('/assinatura/boletos/{invoice}/quitar', MarkCompanyLicenseInvoicePaidController::class)
-            ->name('billing.licenses.mark-paid');
     });
+
+    Route::middleware(['verified', EnsurePlatformAdmin::class])
+        ->prefix('admin')
+        ->name('platform.')
+        ->group(function (): void {
+            Route::get('/', ListGroupsController::class)->name('groups.index');
+            Route::get('/grupos/{group}', ShowGroupController::class)->name('groups.show');
+            Route::post('/licencas/{license}/boletos', IssueCompanyLicenseInvoiceController::class)
+                ->name('licenses.issue');
+            Route::post('/boletos/{invoice}/quitar', MarkCompanyLicenseInvoicePaidController::class)
+                ->name('invoices.mark-paid');
+        });
 
     Route::post('/sair', LogoutController::class)->name('logout');
 });

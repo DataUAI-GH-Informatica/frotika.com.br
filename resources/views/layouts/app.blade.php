@@ -42,10 +42,15 @@
                 ['label' => 'Lançamentos', 'route' => null],
                 ['label' => 'Fluxo de caixa', 'route' => null],
                 ['label' => 'Contas bancárias', 'route' => null],
-                ['label' => 'Assinatura', 'route' => 'billing.licenses.index', 'active' => 'billing.licenses.*'],
             ],
             'Análise' => [['label' => 'DRE veicular', 'route' => null]],
         ];
+
+        if (($isPlatformAdmin ?? false) === true) {
+            $navSections['Plataforma'] = [
+                ['label' => 'Painel da plataforma', 'route' => 'platform.groups.index', 'active' => 'platform.*'],
+            ];
+        }
     @endphp
 
     <div class="min-h-screen lg:grid lg:grid-cols-[var(--spacing-sidebar)_1fr]">
@@ -90,10 +95,10 @@
                 <p class="px-2 text-2xs font-semibold uppercase tracking-[0.14em] text-brand-400">Empresa ativa</p>
                 <p class="px-2 text-sm font-medium text-white">{{ $topbarCurrentCompanyName }}</p>
                 @if ($licenseStatusChip)
-                    <a href="{{ route('billing.licenses.index') }}"
+                    <span
                         class="mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest {{ $licenseStatusChip['classes'] }}">
                         {{ $licenseStatusChip['label'] }}
-                    </a>
+                    </span>
                 @endif
 
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
@@ -139,10 +144,10 @@
                     @endif
 
                     @if ($licenseStatusChip)
-                        <a href="{{ route('billing.licenses.index') }}"
+                        <span
                             class="hidden items-center rounded-full border px-2 py-0.5 text-2xs font-semibold uppercase tracking-widest lg:inline-flex {{ $licenseStatusChip['classes'] }}">
                             {{ $licenseStatusChip['label'] }}
-                        </a>
+                        </span>
                     @endif
 
                     <label class="relative ml-auto hidden min-w-72 max-w-md flex-1 items-center md:flex">
@@ -190,28 +195,25 @@
                             </p>
                         @endif
 
-                        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                            <a href="{{ route('billing.licenses.index') }}"
-                                class="inline-flex items-center rounded-md border border-brand-300 px-2 py-1 font-medium text-brand-700 hover:bg-brand-50">
-                                Ver assinatura
-                            </a>
+                        @if ($licenseBanner['boleto_url'] || $licenseBanner['boleto_pdf_url'])
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                                @if ($licenseBanner['boleto_url'])
+                                    <a href="{{ $licenseBanner['boleto_url'] }}" target="_blank" rel="noopener"
+                                        class="inline-flex items-center rounded-md border border-brand-300 px-2 py-1 font-medium text-brand-700 hover:bg-brand-50">
+                                        Abrir boleto
+                                    </a>
+                                @endif
 
-                            @if ($licenseBanner['boleto_url'])
-                                <a href="{{ $licenseBanner['boleto_url'] }}" target="_blank" rel="noopener"
-                                    class="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50">
-                                    Abrir boleto
-                                </a>
-                            @endif
+                                @if ($licenseBanner['boleto_pdf_url'])
+                                    <a href="{{ $licenseBanner['boleto_pdf_url'] }}" target="_blank" rel="noopener"
+                                        class="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50">
+                                        PDF
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
 
-                            @if ($licenseBanner['boleto_pdf_url'])
-                                <a href="{{ $licenseBanner['boleto_pdf_url'] }}" target="_blank" rel="noopener"
-                                    class="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 font-medium text-slate-700 hover:bg-slate-50">
-                                    PDF
-                                </a>
-                            @endif
-                        </div>
-
-                        @if (!$licenseBanner['can_manage'] && $licenseBanner['owner_name'])
+                        @if (!($licenseBanner['is_owner'] ?? false) && $licenseBanner['owner_name'])
                             <p class="mt-2 text-xs text-slate-600">
                                 Fale com {{ $licenseBanner['owner_name'] }} para regularizar a licença.
                             </p>

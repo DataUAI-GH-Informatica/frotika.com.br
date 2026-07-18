@@ -16,8 +16,7 @@ final class MarkCompanyLicenseInvoiceAsPaid
 {
     public function execute(User $actor, CompanyLicenseInvoice $invoice, ?CarbonImmutable $paidAt, ?string $note): CompanyLicenseInvoice
     {
-        $group = $invoice->group()->firstOrFail();
-        Gate::forUser($actor)->authorize('manage-company-licenses', $group);
+        Gate::forUser($actor)->authorize('access-platform');
 
         /** @var CompanyLicenseInvoice $updated */
         $updated = DB::transaction(function () use ($actor, $invoice, $paidAt, $note): CompanyLicenseInvoice {

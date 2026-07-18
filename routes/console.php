@@ -7,6 +7,7 @@ use App\Domain\Finance\Enums\FinancialEntryType;
 use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Tenancy\Models\Company;
+use App\Models\User;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
@@ -16,6 +17,24 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('frotika:promote-platform-admin {email}', function (): int {
+    $email = (string) $this->argument('email');
+
+    $user = User::query()->where('email', $email)->first();
+
+    if (! $user instanceof User) {
+        $this->error(sprintf('Nenhum usuario encontrado com o e-mail %s.', $email));
+
+        return Command::FAILURE;
+    }
+
+    $user->forceFill(['is_platform_admin' => true])->save();
+
+    $this->info(sprintf('Usuario %s promovido a administrador da plataforma.', $email));
+
+    return Command::SUCCESS;
+})->purpose('Marca uma conta existente como administradora da plataforma (is_platform_admin)');
 
 Artisan::command('frotika:recalculate-balances {--company=} {--dry-run}', function (
     TenantContext $tenant,

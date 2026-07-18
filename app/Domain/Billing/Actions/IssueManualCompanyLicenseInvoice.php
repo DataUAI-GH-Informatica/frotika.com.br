@@ -18,8 +18,7 @@ final class IssueManualCompanyLicenseInvoice
 {
     public function execute(User $actor, CompanyLicense $license, IssueManualCompanyLicenseInvoiceData $data): CompanyLicenseInvoice
     {
-        $group = $license->group()->firstOrFail();
-        Gate::forUser($actor)->authorize('manage-company-licenses', $group);
+        Gate::forUser($actor)->authorize('access-platform');
 
         if ($license->trial_ends_at !== null && now()->lt($license->trial_ends_at)) {
             throw ValidationException::withMessages([

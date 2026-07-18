@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Billing;
+namespace App\Platform\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
-final class IssueManualCompanyLicenseInvoiceRequest extends FormRequest
+final class IssueCompanyLicenseInvoiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        return $user instanceof User && $user->isPlatformAdmin();
     }
 
     /**

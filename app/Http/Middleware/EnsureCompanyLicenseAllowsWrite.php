@@ -24,7 +24,7 @@ final class EnsureCompanyLicenseAllowsWrite
     private const EXEMPT_ROUTE_PATTERNS = [
         'logout',
         'tenancy.switch-company',
-        'billing.licenses.*',
+        'platform.*',
     ];
 
     public function handle(Request $request, Closure $next): Response
@@ -69,7 +69,7 @@ final class EnsureCompanyLicenseAllowsWrite
         }
 
         return redirect()
-            ->route('billing.licenses.index')
+            ->route('dashboard')
             ->with('warning', $message);
     }
 }

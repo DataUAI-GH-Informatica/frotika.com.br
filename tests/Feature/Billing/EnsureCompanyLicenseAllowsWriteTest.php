@@ -49,7 +49,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
         $response->assertJsonPath('status', 'company_license_blocked');
     }
 
-    public function test_permite_leitura_da_tela_de_assinatura_mesmo_com_licenca_pendente(): void
+    public function test_permite_leitura_do_painel_mesmo_com_licenca_pendente(): void
     {
         [$user, $license] = $this->createUserWithCurrentCompany();
 
@@ -60,7 +60,7 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get(route('billing.licenses.index'));
+            ->get(route('dashboard'));
 
         $response->assertOk();
     }
@@ -104,7 +104,8 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
             ->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Filial Norte [Trial]');
+        $response->assertSee('Filial Norte');
+        $response->assertSee('[Trial]');
     }
 
     public function test_exibe_banner_persistente_no_dashboard_quando_licenca_esta_pendente(): void
@@ -123,8 +124,8 @@ final class EnsureCompanyLicenseAllowsWriteTest extends TestCase
             ->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Operações de escrita estão bloqueadas.');
-        $response->assertSee('Ver assinatura');
+        $response->assertSee('Operações de escrita estão');
+        $response->assertSee('Abrir boleto');
         $response->assertSee('Licença bloqueada');
     }
 

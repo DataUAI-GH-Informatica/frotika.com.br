@@ -45,24 +45,8 @@ class AppServiceProvider extends ServiceProvider
                 && $user->groups()->whereKey($company->getAttribute('group_id'))->exists();
         });
 
-        Gate::define('manage-company-licenses', static function (User $user, Group $group): bool {
-            if ((int) $group->owner_user_id !== $user->getKey()) {
-                return false;
-            }
-
-            if ((int) $user->current_group_id !== $group->getKey()) {
-                return false;
-            }
-
-            if ($user->current_company_id === null) {
-                return false;
-            }
-
-            return CompanyLicense::query()
-                ->where('group_id', $group->getKey())
-                ->where('company_id', $user->current_company_id)
-                ->where('is_primary', true)
-                ->exists();
+        Gate::define('access-platform', static function (User $user): bool {
+            return $user->isPlatformAdmin();
         });
 
         View::composer('layouts.app', static function ($view): void {
@@ -73,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('topbarCurrentCompanyId', null);
                 $view->with('topbarCurrentCompanyName', null);
                 $view->with('licenseBanner', null);
+                $view->with('isPlatformAdmin', $user instanceof User && $user->isPlatformAdmin());
 
                 return;
             }
@@ -139,10 +124,6 @@ class AppServiceProvider extends ServiceProvider
                         ->with('owner:id,name')
                         ->find($user->current_group_id);
 
-                    $canManageLicenses = $group !== null
-                        ? Gate::forUser($user)->allows('manage-company-licenses', $group)
-                        : false;
-
                     /** @var CompanyLicenseInvoice|null $openInvoice */
                     $openInvoice = $currentLicense->invoices()
                         ->whereIn('status', [
@@ -152,6 +133,8 @@ class AppServiceProvider extends ServiceProvider
                         ->orderBy('due_date')
                         ->first();
 
+                    $isOwner = $group !== null && (int) $group->owner_user_id === $user->getKey();
+
                     $licenseBanner = [
                         'status_label' => $currentLicense->status->label(),
                         'status_value' => $currentLicense->status->value,
@@ -160,7 +143,7 @@ class AppServiceProvider extends ServiceProvider
                         'boleto_url' => $openInvoice?->boleto_url,
                         'boleto_pdf_url' => $openInvoice?->boleto_pdf_url,
                         'owner_name' => $group?->owner?->name,
-                        'can_manage' => $canManageLicenses,
+                        'is_owner' => $isOwner,
                     ];
                 }
             }
@@ -170,6 +153,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('topbarCurrentCompanyName', $currentCompanyName);
             $view->with('topbarCompanyStatusMarkers', $topbarCompanyStatusMarkers);
             $view->with('licenseBanner', $licenseBanner);
+            $view->with('isPlatformAdmin', $user->isPlatformAdmin());
         });
     }
 }
