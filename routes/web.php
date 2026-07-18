@@ -17,6 +17,7 @@ use App\Http\Controllers\Finance\DeactivateBankAccountController;
 use App\Http\Controllers\Finance\ListBankAccountsController;
 use App\Http\Controllers\Finance\ListFinancialEntriesController;
 use App\Http\Controllers\Finance\SettleFinancialEntryController;
+use App\Http\Controllers\Finance\ShowCashFlowController;
 use App\Http\Controllers\Finance\ShowCreateBankAccountController;
 use App\Http\Controllers\Finance\ShowCreateFinancialEntryController;
 use App\Http\Controllers\Finance\ShowEditBankAccountController;
@@ -147,6 +148,8 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/contas/{account}', DeactivateBankAccountController::class)
             ->whereNumber('account')
             ->name('bank-accounts.destroy');
+
+        Route::get('/fluxo-de-caixa', ShowCashFlowController::class)->name('cash-flow.index');
 
         Route::get('/lancamentos', ListFinancialEntriesController::class)->name('financial-entries.index');
         Route::get('/lancamentos/novo', ShowCreateFinancialEntryController::class)->name('financial-entries.create');

@@ -152,12 +152,6 @@ final class UpdateManualFinancialEntry
                 ]);
             }
 
-            if ($validated['status'] === 'forecast' && ($validated['bank_account_id'] ?? null) !== null) {
-                throw ValidationException::withMessages([
-                    'bank_account_id' => 'Lancamento previsto nao pode ter conta bancaria vinculada.',
-                ]);
-            }
-
             if ($validated['status'] === 'settled' && ($validated['paid_at'] ?? null) === null) {
                 throw ValidationException::withMessages([
                     'paid_at' => 'Lancamento liquidado exige data de pagamento.',

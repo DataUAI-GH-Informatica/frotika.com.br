@@ -441,3 +441,40 @@ Exposicao em tela do backend financeiro que ja existia server-side (Fase 5, part
 - `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
 - `composer test` (165 testes)
 - `npm run build`
+
+## 2026-07-18 - Etapa 0.22 (tela de fluxo de caixa)
+
+Fecha a parte visivel da Fase 5. Tela somente-leitura consumindo `BuildCashFlowMatrix` (dia x conta, com saldo acumulado).
+
+### Entregas da etapa 0.22
+
+- **`ShowCashFlowController`** (`/fluxo-de-caixa`): filtros por query string (periodo com padrao mes corrente, conta, toggle "Considerar previstos"); consolida os dias de todas as contas numa serie unica (soma por data, saldo acumulado = soma dos saldos por conta).
+- **View `cash-flow/index`**: cards de indicadores (saldo inicial, entradas, saidas, resultado, saldo final), tabela "por conta" quando ha mais de uma, e tabela de movimento diario com saldo acumulado destacado em `danger` quando negativo (a projecao de saldo negativo e a razao da tela, secao 8.3). Nav "Fluxo de caixa" ligada.
+- **Teste `CashFlowScreenTest`**: consolida realizado no periodo; previsto com conta-alvo so projeta com o toggle.
+
+### Validacoes da etapa 0.22
+
+- `vendor/bin/pint`
+- `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
+- `composer test` (167 testes)
+- `npm run build`
+
+## 2026-07-18 - Etapa 0.23 (projecao de previstos no fluxo de caixa)
+
+Resolve a tensao aberta na 0.22. Decisao do usuario: **conta-alvo opcional no previsto**; se informada, projeta naquela conta; se nao, projeta no saldo consolidado.
+
+### Entregas da etapa 0.23
+
+- **Actions** `CreateManualFinancialEntry`/`UpdateManualFinancialEntry`: removida a proibicao de conta bancaria em previsto (agora e conta-alvo opcional, onde o dinheiro deve cair). Mantida a regra de que previsto nao tem `paid_at` e liquidado exige conta + `paid_at`. Conta-alvo do previsto nao afeta o saldo realizado (`RecalculateBankAccountCurrentBalance` so soma liquidados).
+- **`FinancialEntryRequest`**: `bank_account_id` deixa de ser `prohibited_if` no previsto (segue `required_if` no liquidado).
+- **Formulario de lancamento**: conta bancaria movida para sempre visivel (rotulo unico, com ajuda explicando previsto vs. liquidado); bloco condicional agora so tem data de pagamento + meio.
+- **`BuildCashFlowMatrix`**: novo balde `unassigned_forecast` — previstos **sem** conta-alvo, agregados por data de caixa (due_date com fallback para competence_date), projetados no consolidado e somados aos totais. So entra quando previstos estao incluidos e nao ha filtro de conta especifica. Contas existentes e seus testes nao mudam (baldes vazios quando nao ha previsto sem conta).
+- **`ShowCashFlowController`**: serie diaria consolidada agora soma o balde `unassigned` (saldo acumulado projetado inclui a projecao dos previstos sem conta).
+- **Testes**: `previsto aceita conta-alvo`, `previsto com paid_at e rejeitado`, `previsto sem conta projeta no consolidado com o toggle`.
+
+### Validacoes da etapa 0.23
+
+- `vendor/bin/pint`
+- `vendor/bin/phpstan analyse --memory-limit=1G` (0 erros, nivel 6)
+- `composer test` (169 testes)
+- `npm run build`

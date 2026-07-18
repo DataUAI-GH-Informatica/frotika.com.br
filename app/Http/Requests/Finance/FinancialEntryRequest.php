@@ -29,7 +29,7 @@ abstract class FinancialEntryRequest extends FormRequest
             'due_date' => ['nullable', 'date'],
             'amount_cents' => ['required', 'integer', 'min:1'],
             'status' => ['required', Rule::in(['forecast', 'settled'])],
-            'bank_account_id' => ['nullable', 'integer', 'min:1', 'required_if:status,settled', 'prohibited_if:status,forecast'],
+            'bank_account_id' => ['nullable', 'integer', 'min:1', 'required_if:status,settled'],
             'paid_at' => ['nullable', 'date', 'required_if:status,settled', 'prohibited_if:status,forecast'],
             'payment_method' => ['nullable', Rule::in($methods)],
             'vehicle_id' => ['nullable', 'integer', 'min:1'],
@@ -45,7 +45,6 @@ abstract class FinancialEntryRequest extends FormRequest
             'required' => 'O campo :attribute é obrigatório.',
             'amount_cents.min' => 'O valor deve ser maior que zero.',
             'bank_account_id.required_if' => 'Lançamento liquidado exige uma conta bancária.',
-            'bank_account_id.prohibited_if' => 'Lançamento previsto não pode ter conta bancária.',
             'paid_at.required_if' => 'Lançamento liquidado exige a data de pagamento.',
             'paid_at.prohibited_if' => 'Lançamento previsto não pode ter data de pagamento.',
         ];

@@ -43,7 +43,7 @@
             ],
             'Financeiro' => [
                 ['label' => 'Lançamentos', 'route' => 'financial-entries.index', 'active' => 'financial-entries.*'],
-                ['label' => 'Fluxo de caixa', 'route' => null],
+                ['label' => 'Fluxo de caixa', 'route' => 'cash-flow.index', 'active' => 'cash-flow.*'],
                 ['label' => 'Contas bancárias', 'route' => 'bank-accounts.index', 'active' => 'bank-accounts.*'],
             ],
             'Análise' => [['label' => 'DRE veicular', 'route' => null]],

@@ -56,7 +56,18 @@ final class BuildCashFlowMatrix
      *             net_cents: int,
      *             running_balance_cents: int
      *         }>
-     *     }>
+     *     }>,
+     *     unassigned_forecast: array{
+     *         revenue_cents: int,
+     *         expense_cents: int,
+     *         net_cents: int,
+     *         days: list<array{
+     *             date: string,
+     *             revenue_cents: int,
+     *             expense_cents: int,
+     *             net_cents: int
+     *         }>
+     *     }
      * }
      */
     public function execute(
@@ -94,25 +105,36 @@ final class BuildCashFlowMatrix
             /** @var Collection<int, BankAccount> $accounts */
             $accounts = $accountsQuery->get(['id', 'name', 'initial_balance_cents']);
 
+            // Previstos sem conta-alvo projetam no consolidado, nunca por conta.
+            // Só entram quando previstos estão incluídos e não há filtro de conta.
+            $includeUnassigned = in_array(FinancialEntryStatus::Forecast->value, $resolvedStatuses, true)
+                && ($resolvedBankAccountIds === null || $resolvedBankAccountIds === []);
+            $unassigned = $includeUnassigned
+                ? $this->buildUnassignedForecast($from, $to, $resolvedFinancialCategoryIds, $resolvedVehicleIds)
+                : $this->emptyUnassignedForecast($from, $to);
+
+            $appliedFilters = [
+                'bank_account_ids' => $resolvedBankAccountIds ?? [],
+                'financial_category_ids' => $resolvedFinancialCategoryIds ?? [],
+                'vehicle_ids' => $resolvedVehicleIds ?? [],
+                'statuses' => $resolvedStatuses,
+            ];
+
             if ($accounts->isEmpty()) {
                 return [
                     'from' => $from->toDateString(),
                     'to' => $to->toDateString(),
                     'include_forecast' => $resolvedIncludeForecast,
-                    'applied_filters' => [
-                        'bank_account_ids' => $resolvedBankAccountIds ?? [],
-                        'financial_category_ids' => $resolvedFinancialCategoryIds ?? [],
-                        'vehicle_ids' => $resolvedVehicleIds ?? [],
-                        'statuses' => $resolvedStatuses,
-                    ],
+                    'applied_filters' => $appliedFilters,
                     'totals' => [
                         'opening_balance_cents' => 0,
-                        'revenue_cents' => 0,
-                        'expense_cents' => 0,
-                        'net_cents' => 0,
-                        'closing_balance_cents' => 0,
+                        'revenue_cents' => $unassigned['revenue_cents'],
+                        'expense_cents' => $unassigned['expense_cents'],
+                        'net_cents' => $unassigned['net_cents'],
+                        'closing_balance_cents' => $unassigned['net_cents'],
                     ],
                     'accounts' => [],
+                    'unassigned_forecast' => $unassigned,
                 ];
             }
 
@@ -226,18 +248,16 @@ final class BuildCashFlowMatrix
                 ];
             }
 
+            $globalRevenue += $unassigned['revenue_cents'];
+            $globalExpense += $unassigned['expense_cents'];
+            $globalClosing += $unassigned['net_cents'];
             $globalNet = $globalRevenue - $globalExpense;
 
             return [
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),
                 'include_forecast' => $resolvedIncludeForecast,
-                'applied_filters' => [
-                    'bank_account_ids' => $resolvedBankAccountIds ?? [],
-                    'financial_category_ids' => $resolvedFinancialCategoryIds ?? [],
-                    'vehicle_ids' => $resolvedVehicleIds ?? [],
-                    'statuses' => $resolvedStatuses,
-                ],
+                'applied_filters' => $appliedFilters,
                 'totals' => [
                     'opening_balance_cents' => $globalOpening,
                     'revenue_cents' => $globalRevenue,
@@ -246,8 +266,112 @@ final class BuildCashFlowMatrix
                     'closing_balance_cents' => $globalClosing,
                 ],
                 'accounts' => $accountsPayload,
+                'unassigned_forecast' => $unassigned,
             ];
         });
+    }
+
+    /**
+     * Previstos sem conta-alvo, agregados por data de caixa (due_date com
+     * fallback para competence_date), para projetar no saldo consolidado.
+     *
+     * @param  list<int>|null  $financialCategoryIds
+     * @param  list<int>|null  $vehicleIds
+     * @return array{revenue_cents: int, expense_cents: int, net_cents: int, days: list<array{date: string, revenue_cents: int, expense_cents: int, net_cents: int}>}
+     */
+    private function buildUnassignedForecast(
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        ?array $financialCategoryIds,
+        ?array $vehicleIds,
+    ): array {
+        $query = FinancialEntry::query()
+            ->whereNull('bank_account_id')
+            ->where('status', FinancialEntryStatus::Forecast->value);
+
+        if ($financialCategoryIds !== null && $financialCategoryIds !== []) {
+            $query->whereIn('financial_category_id', $financialCategoryIds);
+        }
+
+        if ($vehicleIds !== null && $vehicleIds !== []) {
+            $query->whereIn('vehicle_id', $vehicleIds);
+        }
+
+        /** @var Collection<int, FinancialEntry> $entries */
+        $entries = $query->get(['type', 'status', 'amount_cents', 'paid_at', 'due_date', 'competence_date']);
+
+        $dayTotals = [];
+        $totalRevenue = 0;
+        $totalExpense = 0;
+
+        foreach ($entries as $entry) {
+            $entryDate = $this->resolveCashDate($entry);
+
+            if ($entryDate === null || $entryDate->lt($from) || $entryDate->gt($to)) {
+                continue;
+            }
+
+            $signedAmount = $this->signedAmountCents($entry);
+
+            if ($signedAmount === 0) {
+                continue;
+            }
+
+            $dayKey = $entryDate->toDateString();
+            $dayTotals[$dayKey] ??= ['revenue_cents' => 0, 'expense_cents' => 0];
+
+            if ($signedAmount > 0) {
+                $dayTotals[$dayKey]['revenue_cents'] += $signedAmount;
+                $totalRevenue += $signedAmount;
+            } else {
+                $dayTotals[$dayKey]['expense_cents'] += abs($signedAmount);
+                $totalExpense += abs($signedAmount);
+            }
+        }
+
+        $days = [];
+
+        foreach (CarbonPeriod::create($from, $to) as $date) {
+            $dayKey = $date->toDateString();
+            $totals = $dayTotals[$dayKey] ?? ['revenue_cents' => 0, 'expense_cents' => 0];
+            $days[] = [
+                'date' => $dayKey,
+                'revenue_cents' => (int) $totals['revenue_cents'],
+                'expense_cents' => (int) $totals['expense_cents'],
+                'net_cents' => (int) $totals['revenue_cents'] - (int) $totals['expense_cents'],
+            ];
+        }
+
+        return [
+            'revenue_cents' => $totalRevenue,
+            'expense_cents' => $totalExpense,
+            'net_cents' => $totalRevenue - $totalExpense,
+            'days' => $days,
+        ];
+    }
+
+    /**
+     * @return array{revenue_cents: int, expense_cents: int, net_cents: int, days: list<array{date: string, revenue_cents: int, expense_cents: int, net_cents: int}>}
+     */
+    private function emptyUnassignedForecast(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $days = [];
+
+        foreach (CarbonPeriod::create($from, $to) as $date) {
+            $days[] = [
+                'date' => $date->toDateString(),
+                'revenue_cents' => 0,
+                'expense_cents' => 0,
+                'net_cents' => 0,
+            ];
+        }
+
+        return [
+            'revenue_cents' => 0,
+            'expense_cents' => 0,
+            'net_cents' => 0,
+            'days' => $days,
+        ];
     }
 
     /**

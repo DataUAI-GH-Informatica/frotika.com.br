@@ -73,9 +73,39 @@ final class FinancialEntryManagementTest extends TestCase
         ]);
     }
 
-    public function test_previsto_com_conta_e_rejeitado(): void
+    public function test_previsto_aceita_conta_alvo_opcional(): void
     {
-        [$owner, , $base] = $this->scenario(3);
+        [$owner, $company, $base] = $this->scenario(3);
+
+        $this->actingAs($owner)->post(route('financial-entries.store'), [
+            'financial_category_id' => $base['revenue'],
+            'description' => 'Frete a receber no Banco',
+            'amount' => '2.000,00',
+            'competence_date' => '2026-07-05',
+            'due_date' => '2026-08-05',
+            'status' => 'forecast',
+            'bank_account_id' => $base['account'],
+        ])->assertRedirect(route('financial-entries.index'));
+
+        $this->assertDatabaseHas('financial_entries', [
+            'company_id' => $company->getKey(),
+            'type' => 'revenue',
+            'status' => 'forecast',
+            'bank_account_id' => $base['account'],
+            'paid_at' => null,
+            'amount_cents' => 200000,
+        ]);
+
+        // Conta-alvo do previsto não afeta o saldo realizado.
+        $this->assertDatabaseHas('bank_accounts', [
+            'id' => $base['account'],
+            'current_balance_cents' => 0,
+        ]);
+    }
+
+    public function test_previsto_com_data_de_pagamento_e_rejeitado(): void
+    {
+        [$owner, , $base] = $this->scenario(9);
 
         $this->actingAs($owner)
             ->from(route('financial-entries.create'))
@@ -85,9 +115,9 @@ final class FinancialEntryManagementTest extends TestCase
                 'amount' => '10,00',
                 'competence_date' => '2026-07-05',
                 'status' => 'forecast',
-                'bank_account_id' => $base['account'],
+                'paid_at' => '2026-07-05',
             ])
-            ->assertSessionHasErrors('bank_account_id');
+            ->assertSessionHasErrors('paid_at');
 
         $this->assertDatabaseCount('financial_entries', 0);
     }

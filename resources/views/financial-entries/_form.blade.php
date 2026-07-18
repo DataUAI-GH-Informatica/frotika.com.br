@@ -75,6 +75,16 @@
     </div>
 
     <div class="sm:col-span-2">
+        <x-ui.select label="Conta bancária" name="bank_account_id">
+            <option value="">Nenhuma / a definir</option>
+            @foreach ($accounts as $account)
+                <option value="{{ $account->getKey() }}" @selected((int) $accountVal === (int) $account->getKey())>{{ $account->getAttribute('name') }}</option>
+            @endforeach
+        </x-ui.select>
+        <p class="mt-1 text-sm text-slate-500">No previsto, é a conta onde o dinheiro deve cair (opcional, projeta no fluxo). No liquidado, é a conta que recebeu/pagou (obrigatória).</p>
+    </div>
+
+    <div class="sm:col-span-2">
         <span class="text-sm font-medium text-slate-700">Situação</span>
         <div class="mt-1.5 flex gap-2" role="radiogroup">
             <label class="flex-1">
@@ -88,13 +98,7 @@
         </div>
     </div>
 
-    <div id="settlement-fields" class="grid gap-4 sm:col-span-2 sm:grid-cols-3 {{ $statusVal === 'settled' ? '' : 'hidden' }}">
-        <x-ui.select label="Conta bancária" name="bank_account_id">
-            <option value="">Selecione…</option>
-            @foreach ($accounts as $account)
-                <option value="{{ $account->getKey() }}" @selected((int) $accountVal === (int) $account->getKey())>{{ $account->getAttribute('name') }}</option>
-            @endforeach
-        </x-ui.select>
+    <div id="settlement-fields" class="grid gap-4 sm:col-span-2 sm:grid-cols-2 {{ $statusVal === 'settled' ? '' : 'hidden' }}">
         <x-ui.input label="Data do pagamento" name="paid_at" :value="$paidVal" type="date" />
         <x-ui.select label="Meio" name="payment_method">
             <option value="">—</option>
