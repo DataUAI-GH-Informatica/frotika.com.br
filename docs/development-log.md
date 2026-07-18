@@ -626,3 +626,21 @@ O usuario adicionou os assets oficiais (`public/assets/logo-frotika.png` e `publ
 
 - `npm run build`
 - Sem hex fixo em Blade (regra do design system mantida); cores so via tokens.
+
+## 2026-07-18 - Etapa 0.30 (e-mails padronizados na estetica da marca)
+
+O sistema so tinha os dois e-mails gerados pelo framework (confirmacao de e-mail e redefinicao de senha), ambos com o template generico do Laravel. Padronizei os dois na estetica Frotika e criei um caminho de avaliacao no MailHog.
+
+### Entregas da etapa 0.30
+
+- **Layout de e-mail branded** (`resources/views/components/mail/layout.blade.php` + `mail/button.blade.php`): HTML table-based com estilo inline (clientes de e-mail nao rodam Tailwind/CSS externo). Filete de acento amarelo `#fdb80f`, cabecalho navy `#1a2536` com o icone da marca, corpo em card branco com filete, botao "bulletproof" navy e rodape discreto. Preheader opcional. Aqui o hex e inevitavel e correto (e HTML de e-mail, nao UI da app).
+- **Templates** (`resources/views/emails/auth/verify-email.blade.php` e `reset-password.blade.php`): usam o layout, saudacao com primeiro nome, CTA, fallback de link copiavel e nota de expiracao/seguranca.
+- **Notificacoes customizadas** (`App\Notifications\Auth\VerifyEmailNotification` e `ResetPasswordNotification`): estendem as do framework, reaproveitam a geracao de URL (`verificationUrl`/`resetUrl`) e trocam so o `toMail` para renderizar o template branded. `User::sendEmailVerificationNotification()` e `sendPasswordResetNotification()` sobrescritos para usa-las.
+- **Remetente**: `MAIL_FROM_NAME` passou de `${APP_NAME}` (mostrava "Laravel") para "Frotika" no `.env` e `.env.example`; `.env.example` alinhado ao MailHog (`smtp` / porta `1025`).
+- **Comando de avaliacao** (`frotika:mail-preview {--to=}`): dispara todos os e-mails do sistema para o MailHog usando um notifiable transitorio; `--to` define o destino (default = `mail.from.address`).
+
+### Validacoes da etapa 0.30
+
+- `php artisan test --filter=BrandedEmailsTest` (5 testes: notificacoes branded + render dos templates + comando de preview)
+- `php artisan frotika:mail-preview` (2 e-mails entregues no MailHog para avaliacao visual)
+- `vendor/bin/pint` e `vendor/bin/phpstan analyse --memory-limit=1G`

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\Auth\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -34,7 +34,7 @@ final class PasswordResetFlowTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('status');
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
     public function test_redefine_senha_com_token_valido(): void
@@ -51,7 +51,7 @@ final class PasswordResetFlowTest extends TestCase
 
         $token = '';
 
-        Notification::assertSentTo($user, ResetPassword::class, static function (ResetPassword $notification) use (&$token): bool {
+        Notification::assertSentTo($user, ResetPasswordNotification::class, static function (ResetPasswordNotification $notification) use (&$token): bool {
             $token = $notification->token;
 
             return true;

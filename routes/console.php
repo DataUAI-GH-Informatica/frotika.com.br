@@ -8,11 +8,14 @@ use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
+use App\Notifications\Auth\ResetPasswordNotification;
+use App\Notifications\Auth\VerifyEmailNotification;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Str;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -163,6 +166,29 @@ Artisan::command('frotika:generate-recurrences {--company=} {--reference-date=} 
 
     return Command::SUCCESS;
 })->purpose('Gera lancamentos previstos a partir de recorrencias ativas');
+
+Artisan::command('frotika:mail-preview {--to=}', function (): int {
+    $to = (string) ($this->option('to') ?: config('mail.from.address') ?: 'dev@frotika.test');
+
+    // Notifiable transitorio: nao persiste nada, so precisa de chave + e-mail
+    // para o framework montar as URLs assinadas/de reset.
+    $user = new User(['name' => 'Guilherme (preview)', 'email' => $to]);
+    $user->id = 999999;
+
+    $emails = [
+        'Confirmacao de e-mail' => fn () => $user->notify(new VerifyEmailNotification),
+        'Redefinicao de senha' => fn () => $user->notify(new ResetPasswordNotification(Str::random(64))),
+    ];
+
+    foreach ($emails as $label => $send) {
+        $send();
+        $this->line(sprintf('  ✓ %s', $label));
+    }
+
+    $this->info(sprintf('%d e-mail(s) enviados para %s. Abra o MailHog para avaliar.', count($emails), $to));
+
+    return Command::SUCCESS;
+})->purpose('Envia todos os e-mails do sistema (branded) para avaliacao no MailHog');
 
 Schedule::command('frotika:generate-recurrences')
     ->monthlyOn(1, '01:30')

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\Auth\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -53,7 +53,7 @@ final class EmailVerificationFlowTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('status');
 
-        Notification::assertSentTo($user, VerifyEmail::class);
+        Notification::assertSentTo($user, VerifyEmailNotification::class);
     }
 
     public function test_usuario_consegue_confirmar_email_com_link_assinado(): void
@@ -103,7 +103,7 @@ final class EmailVerificationFlowTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertFalse($user->hasVerifiedEmail());
-        Notification::assertSentTo($user, VerifyEmail::class);
+        Notification::assertSentTo($user, VerifyEmailNotification::class);
     }
 
     private function validCnpj(): string
