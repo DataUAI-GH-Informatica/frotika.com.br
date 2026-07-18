@@ -128,13 +128,14 @@ composer require spatie/laravel-permission      # papéis com teams = group_id
 composer require spatie/laravel-activitylog     # auditoria
 composer require spatie/laravel-pdf             # DRE em PDF
 composer require spatie/simple-excel            # exportações
-composer require laravel/horizon                # filas
+composer require laravel/horizon                # filas (Redis; ver ADR-007)
+composer require laravel/reverb                 # websocket (ver ADR-007)
+composer require laravel/telescope              # observabilidade (prod sob demanda; ver ADR-007)
 composer require brick/money                    # aritmética monetária
 
 # Desenvolvimento
 composer require --dev laravel/boost            # ferramentas para o agente
 composer require --dev larastan/larastan
-composer require --dev laravel/telescope
 composer require --dev rector/rector
 
 # Front
@@ -142,6 +143,8 @@ npm i -D tailwindcss @tailwindcss/vite
 ```
 
 > `laravel/pao` já vem no skeleton e reduz drasticamente o ruído de saída do Artisan/PHPUnit quando rodando dentro de agente. Não remover.
+
+> **Infraestrutura (ADR-007).** Telescope, Horizon e Reverb estão instalados. Telescope é dependência de produção mas fica **desligado** por `TELESCOPE_ENABLED=false` (liga sob demanda). Horizon supervisiona filas Redis em produção — em dev/Windows as filas seguem em `database`. Reverb serve o websocket com canais escopados por empresa. Os painéis `/admin/telescope` e `/admin/horizon` são restritos ao admin da plataforma. Horizon exige `ext-pcntl`/`ext-posix` (só Linux); instalar localmente com `--ignore-platform-req`.
 
 Após instalar Boost: `php artisan boost:install`.
 

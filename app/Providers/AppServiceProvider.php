@@ -48,6 +48,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(TenantContext::class);
+
+        // Telescope não é auto-descoberto (ver composer.json dont-discover): só sobe
+        // quando TELESCOPE_ENABLED=true, para poder ligá-lo sob demanda em produção
+        // sem custo de observação quando desligado.
+        if ((bool) config('telescope.enabled', false)) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
     }
 
     /**

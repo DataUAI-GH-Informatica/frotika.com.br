@@ -84,7 +84,7 @@
     "src": "_ibm-plex-sans-700-normal-Bxkt5Cjx.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BQArby0b.css",
+    "file": "assets/app-D6zUYkA0.css",
     "name": "app",
     "names": [
       "app.css"
@@ -93,7 +93,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BusyfgOD.js",
+    "file": "assets/app-BINkp5co.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
