@@ -43,8 +43,6 @@ abstract class VehicleRequest extends FormRequest
             'odometer_initial' => ['nullable', 'integer', 'min:0', 'max:9999999'],
             'acquisition_date' => ['nullable', 'date'],
             'acquisition_value_cents' => ['nullable', 'integer', 'min:0'],
-            'residual_value_cents' => ['nullable', 'integer', 'min:0'],
-            'depreciation_months' => ['nullable', 'integer', 'between:1,600'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -92,8 +90,6 @@ abstract class VehicleRequest extends FormRequest
             'odometer_initial' => 'hodômetro inicial',
             'acquisition_date' => 'data de aquisição',
             'acquisition_value_cents' => 'valor de aquisição',
-            'residual_value_cents' => 'valor residual',
-            'depreciation_months' => 'meses de depreciação',
             'notes' => 'observações',
         ];
     }
@@ -113,7 +109,6 @@ abstract class VehicleRequest extends FormRequest
             'chassis' => $this->nullableUpper('chassis'),
             'rntrc' => $this->nullableDigits('rntrc'),
             'acquisition_value_cents' => $this->centsFromMoney('acquisition_value'),
-            'residual_value_cents' => $this->centsFromMoney('residual_value'),
             'notes' => $this->nullableTrimmed('notes'),
         ]);
     }

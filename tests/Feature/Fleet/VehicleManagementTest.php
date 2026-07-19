@@ -42,8 +42,6 @@ final class VehicleManagementTest extends TestCase
                 'tank_capacity_l' => '600',
                 'odometer_initial' => '350000',
                 'acquisition_value' => '450.000,00',
-                'residual_value' => '180000',
-                'depreciation_months' => '60',
             ]);
 
         $vehicle = Vehicle::withoutGlobalScopes()->where('plate', 'ABC1D23')->firstOrFail();
@@ -52,7 +50,6 @@ final class VehicleManagementTest extends TestCase
         $this->assertSame(VehicleType::Tractor, $vehicle->type);
         $this->assertSame(VehicleFuelType::DieselS10, $vehicle->fuel_type);
         $this->assertSame(45000000, (int) $vehicle->getAttribute('acquisition_value_cents'));
-        $this->assertSame(18000000, (int) $vehicle->getAttribute('residual_value_cents'));
         $this->assertSame(350000, (int) $vehicle->getAttribute('odometer_current'));
         $this->assertFalse((bool) $vehicle->getAttribute('provisioned'));
     }

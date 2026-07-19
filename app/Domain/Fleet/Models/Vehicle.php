@@ -46,8 +46,6 @@ final class Vehicle extends Model
             'odometer_current' => 'integer',
             'acquisition_date' => 'date',
             'acquisition_value_cents' => 'integer',
-            'residual_value_cents' => 'integer',
-            'depreciation_months' => 'integer',
             'provisioned' => 'boolean',
         ];
     }

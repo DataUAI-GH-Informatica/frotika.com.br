@@ -363,8 +363,6 @@ Fluxo obrigatório: `owner` atual seleciona outro `admin` → confirmação por 
 | `odometer_current` | int | denormalizado, atualizado por viagem/abastecimento |
 | `acquisition_date` | date, null | |
 | `acquisition_value_cents` | bigint, null | |
-| `residual_value_cents` | bigint, null | valor de revenda estimado |
-| `depreciation_months` | smallint, null | vida útil; null = sem depreciação |
 | `status` | enum | `active`, `inactive`, `maintenance`, `sold` |
 | `notes` | text, null | |
 
@@ -513,7 +511,7 @@ Se odometer atual <= odometer anterior → erro de validação, bloquear.
 | `type` | enum | `revenue`, `expense` |
 | `dre_group` | enum | `gross_revenue`, `deductions`, `variable_cost`, `fixed_cost`, `admin_expense`, `financial_expense`, `non_operating`, `investment` |
 | `allocation` | enum | `vehicle_direct` (custo direto do veículo), `apportioned` (rateado), `non_vehicle` (fora do DRE veicular) |
-| `affects_cashflow` | boolean | **false para depreciação e provisões** |
+| `affects_cashflow` | boolean | **false para ajustes sem caixa** |
 | `is_system` | boolean | não editável/removível |
 | `active` | boolean | |
 
@@ -545,7 +543,6 @@ Se odometer atual <= odometer anterior → erro de validação, bloquear.
   4.5 IPVA e licenciamento ....... expense / fixed_cost / vehicle_direct
   4.6 Rastreamento ............... expense / fixed_cost / vehicle_direct
   4.7 Parcela de financiamento ... expense / fixed_cost / vehicle_direct
-  4.8 Depreciação ................ expense / fixed_cost / vehicle_direct  [affects_cashflow=false] [system]
 5. DESPESAS ADMINISTRATIVAS
   5.1 Pró-labore ................. expense / admin_expense / apportioned
   5.2 Salários do escritório ..... expense / admin_expense / apportioned
@@ -836,7 +833,6 @@ Cada um asserta o `CteData` resultante campo a campo. **Este é o conjunto de te
 | Pergunta | "Tenho dinheiro?" | "Estou lucrando?" |
 | Data | `paid_at` | `competence_date` |
 | Filtro | `status = settled` | `status in (settled, forecast)` conforme o modo |
-| Depreciação | **não entra** (`affects_cashflow = false`) | entra |
 | Compra de veículo | entra (saída de caixa) | não entra (é investimento) |
 | Parcela de financiamento | entra integral | só os juros (MVP: entra integral — ver 18.4) |
 
@@ -912,12 +908,11 @@ RECEITA BRUTA
   IPVA e licenciamento                    -310,00    -0,7%    -0,03
   Rastreamento                             -89,00    -0,2%    -0,01
   Parcela de financiamento              -4.800,00   -11,0%    -0,48
-  Depreciação                           -2.083,00    -4,8%    -0,21
-= RESULTADO OPERACIONAL DO VEÍCULO        4.186,00     9,6%     0,42
+= RESULTADO OPERACIONAL DO VEÍCULO        6.269,00    14,3%     0,63
 (-) RATEIO DE DESPESAS ADMINISTRATIVAS
   (critério: km rodado — 24,3% da frota)  -1.944,00    -4,4%    -0,19
 (-) RATEIO DE DESPESAS FINANCEIRAS          -122,00    -0,3%    -0,01
-= RESULTADO LÍQUIDO DO VEÍCULO            2.120,00     4,9%     0,21
+= RESULTADO LÍQUIDO DO VEÍCULO            4.203,00     9,6%     0,42
 ```
 
 **Indicadores no topo (cards):**
@@ -952,9 +947,7 @@ RECEITA BRUTA
 //      AND category.allocation = 'vehicle_direct'
 //    GROUP BY 1, 2
 
-// 3. Depreciação — calculada, não lançada manualmente (ver 9.4)
-
-// 4. Rateio — categorias com allocation = 'apportioned'
+// 3. Rateio — categorias com allocation = 'apportioned'
 //    total do período ÷ frota, pelo critério configurado
 ```
 
@@ -977,38 +970,23 @@ RECEITA BRUTA
 
 O critério aparece na tela: *"Rateio por km rodado — este veículo rodou 24,3% dos km da frota."* Número sem explicação é número em que não se confia.
 
-### 9.4 Depreciação
-
-Linear, calculada em tempo de relatório, **não** lançada em `financial_entries`:
-
-```
-depreciação_mensal = (acquisition_value_cents - residual_value_cents) / depreciation_months
-
-Só entra se: acquisition_value_cents, depreciation_months preenchidos
-             E o mês está dentro de [acquisition_date, acquisition_date + depreciation_months]
-```
-
-`affects_cashflow = false` na categoria 4.8 garante que nunca contamine o fluxo de caixa.
-
-> **Sugestão de default no cadastro do veículo:** cavalo mecânico ≈ 60 meses com 40% de residual; carreta ≈ 96 meses com 30%. São sugestões pré-preenchidas e editáveis, não regras — deixar claro na UI que é uma estimativa do usuário.
-
-### 9.5 Modos de visualização
+### 9.4 Modos de visualização
 
 1. **Veículo individual** — um `vehicle_id` (cavalo, carreta ou truck). A carreta não gera receita sozinha, mas o custo de pneu e manutenção dela aparece na linha dela — sem conjunto vigente (ver ADR-006).
 2. **Comparativo da frota** — tabela, uma linha por veículo, colunas de indicadores, ordenável. **Esta é a tela que vende o produto:** ordenar por "Resultado líquido" e ver o veículo negativo.
 3. **Consolidado** — soma da empresa, batendo com o DRE gerencial.
 
-### 9.6 Elemento de assinatura — cascata de resultado
+### 9.5 Elemento de assinatura — cascata de resultado
 
 No topo do DRE individual, um gráfico de cascata (waterfall) em SVG: receita líquida → cada bloco de custo descendo em `brand` → resultado final em `success` ou `danger`. Sem biblioteca de gráficos; SVG gerado no servidor.
 
 É a única peça visualmente ousada do sistema. Tudo ao redor é sóbrio. Cada barra é clicável e abre o drill-down dos lançamentos daquele bloco.
 
-### 9.7 Drill-down
+### 9.6 Drill-down
 
 Toda linha do DRE é clicável e abre um painel lateral com os lançamentos que a compõem, cada um linkando para a origem (abastecimento, manutenção, CT-e). **Sem isso o relatório não é auditável e o usuário não confia.** Requisito de MVP, não de fase 2.
 
-### 9.8 Performance
+### 9.7 Performance
 
 - Consulta agregada única com `GROUP BY`, nunca N+1 por categoria.
 - Cache por (`company_id`, `vehicle_id`, `from`, `to`, `method`) com TTL de 10 min, invalidado por evento de `FinancialEntry` salvo.
@@ -1522,7 +1500,7 @@ PHPUnit 12 (já no skeleton). Sem Pest — o skeleton veio com PHPUnit e trocar 
 | **Tenancy** | Empresa A não lê dado de B (um teste por model com `BelongsToCompany`) · troca de empresa valida vínculo · job restaura contexto · `creating` sem contexto lança exceção |
 | **CT-e** | Todas as fixtures da [seção 7.6](#76-testes-obrigatórios-do-parser) · reimport é idempotente · anulação cancela lançamento · substituto cancela referenciado · chave duplicada não duplica |
 | **Consumo** | Sequência com tanque parcial · sem full_tank anterior → null · arla não conta · odômetro regressivo bloqueia |
-| **Financeiro** | Saldo com previstos e realizados · transferência gera par · cancelar origem cancela lançamento · depreciação fora do fluxo de caixa · recálculo de saldo bate com cache |
+| **Financeiro** | Saldo com previstos e realizados · transferência gera par · cancelar origem cancela lançamento · categorias sem caixa fora do fluxo · recálculo de saldo bate com cache |
 | **DRE** | Cada linha soma o esperado · rateio por km/receita/igual · **soma dos rateios == total** · veículo sem km não quebra · período sem dado retorna zerado, não erro |
 | **Rateio** | Maior resto: R$ 1.000,00 ÷ 3 = 33333+33333+33334 · ÷ 7 · ÷ 1 · ÷ 0 |
 | **Billing** | Trial expira → somente leitura · webhook duplicado processa uma vez · limite de plano bloqueia criação, não leitura · só o owner é notificado |
@@ -1605,7 +1583,6 @@ Cada fase é entregável e testável. Não iniciar a próxima com a anterior ver
 ### Fase 6 — DRE Veicular ★
 
 - [ ] `DreBuilder` + `ApportionmentStrategy` (4 critérios)
-- [ ] Depreciação calculada
 - [ ] Modos: individual, comparativo, consolidado
 - [ ] Cards de indicadores
 - [ ] Cascata SVG

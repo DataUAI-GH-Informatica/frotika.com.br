@@ -1,7 +1,7 @@
 ---
-name: 'Dinheiro e cálculo financeiro'
-description: 'Regras monetárias, rateio, DRE e fluxo de caixa'
-applyTo: 'app/Domain/Finance/**,app/Domain/Reports/**,app/Support/Money/**,database/migrations/**'
+name: "Dinheiro e cálculo financeiro"
+description: "Regras monetárias, rateio, DRE e fluxo de caixa"
+applyTo: "app/Domain/Finance/**,app/Domain/Reports/**,app/Support/Money/**,database/migrations/**"
 ---
 
 # Dinheiro no Frotika
@@ -37,10 +37,10 @@ Divisor zero → rateio zero, com aviso na tela. Nunca divisão por zero silenci
 
 ## As duas datas
 
-| Campo | Alimenta | Rótulo na tela |
-| --- | --- | --- |
-| `competence_date` | DRE | "Data do serviço" |
-| `paid_at` | Fluxo de caixa | "Data do pagamento" |
+| Campo             | Alimenta       | Rótulo na tela      |
+| ----------------- | -------------- | ------------------- |
+| `competence_date` | DRE            | "Data do serviço"   |
+| `paid_at`         | Fluxo de caixa | "Data do pagamento" |
 
 Nunca derive uma da outra. `paid_at = null` significa não realizado, não hoje.
 
@@ -50,7 +50,7 @@ As palavras "competência" e "regime de caixa" não aparecem na interface. O usu
 
 Relatório agrega **só** `financial_entries`. Nunca soma direto de `fuelings`, `maintenances` ou `cte_documents` — essas geram lançamentos via `EntrySynchronizer`.
 
-`affects_cashflow = false` na categoria (depreciação, provisão) mantém o valor fora do fluxo de caixa e dentro do DRE.
+`affects_cashflow = false` na categoria mantém o valor fora do fluxo de caixa e dentro do DRE.
 
 Consulta agregada única com `GROUP BY`. Nunca loop de categoria nem N+1 por veículo.
 

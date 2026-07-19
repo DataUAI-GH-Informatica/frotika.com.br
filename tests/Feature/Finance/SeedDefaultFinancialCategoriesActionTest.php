@@ -29,7 +29,7 @@ final class SeedDefaultFinancialCategoriesActionTest extends TestCase
         $action = app(SeedDefaultFinancialCategories::class);
         $action->execute($company);
 
-        $this->assertDatabaseCount('financial_categories', 46);
+        $this->assertDatabaseCount('financial_categories', 45);
 
         $rootId = DB::table('financial_categories')
             ->where('company_id', $company->getKey())
@@ -47,9 +47,8 @@ final class SeedDefaultFinancialCategoriesActionTest extends TestCase
 
         $this->assertDatabaseHas('financial_categories', [
             'company_id' => $company->getKey(),
-            'code' => '4.8',
-            'affects_cashflow' => false,
-            'is_system' => true,
+            'code' => '4.7',
+            'name' => 'Parcela de financiamento',
         ]);
 
         $tenant = app(TenantContext::class);
@@ -83,8 +82,8 @@ final class SeedDefaultFinancialCategoriesActionTest extends TestCase
             ->where('company_id', $companyB->getKey())
             ->count();
 
-        $this->assertSame(46, $countA);
-        $this->assertSame(46, $countB);
+        $this->assertSame(45, $countA);
+        $this->assertSame(45, $countB);
     }
 
     private function createCompany(int $seed): Company

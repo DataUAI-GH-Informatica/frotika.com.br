@@ -34,8 +34,6 @@ final readonly class VehicleData
         public int $odometerInitial = 0,
         public ?string $acquisitionDate = null,
         public ?int $acquisitionValueCents = null,
-        public ?int $residualValueCents = null,
-        public ?int $depreciationMonths = null,
         public ?string $notes = null,
     ) {}
 
@@ -70,8 +68,6 @@ final readonly class VehicleData
             odometerInitial: self::nullableInt($data['odometer_initial'] ?? null) ?? 0,
             acquisitionDate: self::nullableString($data['acquisition_date'] ?? null),
             acquisitionValueCents: self::nullableInt($data['acquisition_value_cents'] ?? null),
-            residualValueCents: self::nullableInt($data['residual_value_cents'] ?? null),
-            depreciationMonths: self::nullableInt($data['depreciation_months'] ?? null),
             notes: self::nullableString($data['notes'] ?? null),
         );
     }
@@ -103,8 +99,6 @@ final readonly class VehicleData
             'odometer_initial' => $this->odometerInitial,
             'acquisition_date' => $this->acquisitionDate,
             'acquisition_value_cents' => $this->acquisitionValueCents,
-            'residual_value_cents' => $this->residualValueCents,
-            'depreciation_months' => $this->depreciationMonths,
             'notes' => $this->notes,
         ];
     }

@@ -305,14 +305,6 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
 
         $this->assertDatabaseHas('financial_categories', [
             'company_id' => $result->company->getKey(),
-            'code' => '4.8',
-            'name' => 'Depreciacao',
-            'affects_cashflow' => false,
-            'is_system' => true,
-        ]);
-
-        $this->assertDatabaseHas('financial_categories', [
-            'company_id' => $result->company->getKey(),
             'code' => '8.4',
             'name' => 'Transferencia entre contas',
             'dre_group' => 'non_operating',
@@ -320,7 +312,7 @@ final class RegisterOwnerAndCompanyActionTest extends TestCase
             'is_system' => true,
         ]);
 
-        $this->assertDatabaseCount('financial_categories', 46);
+        $this->assertDatabaseCount('financial_categories', 45);
     }
 
     public function test_faz_rollback_quando_cnpj_duplicado_dispara_erro(): void

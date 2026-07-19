@@ -40,8 +40,6 @@ return new class extends Migration
 
             $table->date('acquisition_date')->nullable();
             $table->bigInteger('acquisition_value_cents')->nullable();
-            $table->bigInteger('residual_value_cents')->nullable();
-            $table->unsignedSmallInteger('depreciation_months')->nullable();
 
             $table->boolean('provisioned')->default(false);
             $table->text('notes')->nullable();

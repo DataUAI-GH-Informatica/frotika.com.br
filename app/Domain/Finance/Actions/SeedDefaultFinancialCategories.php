@@ -124,7 +124,6 @@ final class SeedDefaultFinancialCategories
             ['parent_code' => '4', 'code' => '4.5', 'name' => 'IPVA e licenciamento', 'type' => 'expense', 'dre_group' => 'fixed_cost', 'allocation' => 'vehicle_direct', 'affects_cashflow' => true, 'is_system' => false, 'active' => true, 'sort_order' => 450],
             ['parent_code' => '4', 'code' => '4.6', 'name' => 'Rastreamento', 'type' => 'expense', 'dre_group' => 'fixed_cost', 'allocation' => 'vehicle_direct', 'affects_cashflow' => true, 'is_system' => false, 'active' => true, 'sort_order' => 460],
             ['parent_code' => '4', 'code' => '4.7', 'name' => 'Parcela de financiamento', 'type' => 'expense', 'dre_group' => 'fixed_cost', 'allocation' => 'vehicle_direct', 'affects_cashflow' => true, 'is_system' => false, 'active' => true, 'sort_order' => 470],
-            ['parent_code' => '4', 'code' => '4.8', 'name' => 'Depreciacao', 'type' => 'expense', 'dre_group' => 'fixed_cost', 'allocation' => 'vehicle_direct', 'affects_cashflow' => false, 'is_system' => true, 'active' => true, 'sort_order' => 480],
 
             ['parent_code' => null, 'code' => '5', 'name' => 'Despesas administrativas', 'type' => null, 'dre_group' => null, 'allocation' => null, 'affects_cashflow' => true, 'is_system' => false, 'active' => true, 'sort_order' => 500],
             ['parent_code' => '5', 'code' => '5.1', 'name' => 'Pro-labore', 'type' => 'expense', 'dre_group' => 'admin_expense', 'allocation' => 'apportioned', 'affects_cashflow' => true, 'is_system' => false, 'active' => true, 'sort_order' => 510],
