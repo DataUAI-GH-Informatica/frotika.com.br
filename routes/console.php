@@ -197,3 +197,27 @@ Schedule::command('frotika:generate-recurrences')
 Schedule::command('frotika:recalculate-balances')
     ->dailyAt('02:00')
     ->withoutOverlapping();
+
+Schedule::command('backup:run --only-db')
+    ->dailyAt('00:05')
+    ->withoutOverlapping();
+
+Schedule::command('backup:run --only-db')
+    ->dailyAt('06:00')
+    ->withoutOverlapping();
+
+Schedule::command('backup:run --only-db')
+    ->dailyAt('12:00')
+    ->withoutOverlapping();
+
+Schedule::command('backup:run --only-db')
+    ->dailyAt('18:00')
+    ->withoutOverlapping();
+
+Schedule::command('backup:clean')
+    ->dailyAt('01:30')
+    ->withoutOverlapping();
+
+Schedule::command('backup:monitor')
+    ->dailyAt('07:00')
+    ->withoutOverlapping();

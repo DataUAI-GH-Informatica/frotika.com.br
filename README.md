@@ -15,6 +15,7 @@ manutenção e financeiro em visão de lucro por caminhão, competência e caixa
 - [Regras Invioláveis](#regras-invioláveis)
 - [Convenções de Código](#convenções-de-código)
 - [Fluxo de Trabalho](#fluxo-de-trabalho)
+- [Backup Automatizado](#backup-automatizado)
 - [Documentação Relacionada](#documentação-relacionada)
 - [Licença](#licença)
 
@@ -200,6 +201,73 @@ Checklist mínimo antes de concluir:
 composer test
 vendor/bin/pint
 vendor/bin/phpstan analyse
+```
+
+## Backup Automatizado
+
+O projeto usa [spatie/laravel-backup](https://github.com/spatie/laravel-backup) com foco principal em dump de banco.
+
+### Escopo de backup
+
+- comando principal: `php artisan backup:run --only-db`
+- `config/backup.php` com `backup.source.files.include` vazio para priorizar banco
+- conexão usada no dump: `env('DB_CONNECTION', 'mysql')`
+
+### Armazenamento
+
+- disco padrão do backup: `backups`
+- configuração do disco em [config/filesystems.php](config/filesystems.php)
+- diretório físico: `storage/app/backups`
+- subdiretório por aplicação: `storage/app/backups/{APP_NAME}`
+
+### Scheduler (rotina automática)
+
+Configuração em [routes/console.php](routes/console.php):
+
+- `backup:run --only-db` em `00:05`, `06:00`, `12:00`, `18:00`
+- `backup:clean` diariamente às `01:30`
+- `backup:monitor` diariamente às `07:00`
+
+### Retenção
+
+Estratégia: `DefaultStrategy` em [config/backup.php](config/backup.php):
+
+- manter todos por 7 dias
+- backups diários por 16 dias
+- backups semanais por 8 semanas
+- backups mensais por 4 meses
+- backups anuais por 2 anos
+- limite total: 5000 MB
+
+### Notificações
+
+- eventos de sucesso/falha de backup, limpeza e monitoramento usam canal e-mail
+- destinatário configurável por `BACKUP_NOTIFICATION_EMAIL`
+- variável de ambiente documentada em [.env.example](.env.example)
+
+### Pré-requisito operacional
+
+- para `backup:run --only-db` com MySQL, o binário `mysqldump` precisa estar disponível no PATH do sistema
+- em Windows local sem `mysqldump`, o comando falha até a instalação/configuração do cliente MySQL
+
+### Operação via painel admin
+
+O painel da plataforma possui a tela de backups em `GET /admin/backups` (menu `Backups`):
+
+- listar arquivos
+- executar backup de banco
+- executar backup completo
+- limpar backups antigos
+- monitorar saúde de backups
+- baixar e excluir arquivos
+
+### Comandos operacionais úteis
+
+```bash
+php artisan backup:run --only-db
+php artisan backup:run
+php artisan backup:clean
+php artisan backup:monitor
 ```
 
 ## Documentação Relacionada

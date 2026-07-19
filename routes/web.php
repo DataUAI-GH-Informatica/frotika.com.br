@@ -80,9 +80,16 @@ use App\Http\Controllers\Trips\ShowImportCteController;
 use App\Http\Controllers\Trips\StoreCteImportController;
 use App\Http\Middleware\EnsureGroupLicenseAllowsWrite;
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Platform\Http\Controllers\CleanBackupsController;
+use App\Platform\Http\Controllers\DeleteBackupFileController;
+use App\Platform\Http\Controllers\DownloadBackupFileController;
 use App\Platform\Http\Controllers\IssueGroupLicenseInvoiceController;
+use App\Platform\Http\Controllers\ListBackupsController;
 use App\Platform\Http\Controllers\ListGroupsController;
 use App\Platform\Http\Controllers\MarkGroupLicenseInvoicePaidController;
+use App\Platform\Http\Controllers\MonitorBackupsController;
+use App\Platform\Http\Controllers\RunDatabaseBackupController;
+use App\Platform\Http\Controllers\RunFullBackupController;
 use App\Platform\Http\Controllers\ShowGroupController;
 use Illuminate\Support\Facades\Route;
 
@@ -273,6 +280,14 @@ Route::middleware('auth')->group(function (): void {
                 ->name('licenses.issue');
             Route::post('/boletos/{invoice}/quitar', MarkGroupLicenseInvoicePaidController::class)
                 ->name('invoices.mark-paid');
+
+            Route::get('/backups', ListBackupsController::class)->name('backups.index');
+            Route::post('/backups/executar-db', RunDatabaseBackupController::class)->name('backups.run-db');
+            Route::post('/backups/executar-completo', RunFullBackupController::class)->name('backups.run-full');
+            Route::post('/backups/limpar', CleanBackupsController::class)->name('backups.clean');
+            Route::post('/backups/monitorar', MonitorBackupsController::class)->name('backups.monitor');
+            Route::get('/backups/download', DownloadBackupFileController::class)->name('backups.download');
+            Route::delete('/backups/arquivo', DeleteBackupFileController::class)->name('backups.destroy');
         });
 
     Route::post('/sair', LogoutController::class)->name('logout');

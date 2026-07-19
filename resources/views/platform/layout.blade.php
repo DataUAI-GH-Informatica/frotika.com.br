@@ -34,6 +34,15 @@
                     ])>
                         Grupos
                     </a>
+                    <a href="{{ route('platform.backups.index') }}" @class([
+                        'rounded-md px-2.5 py-1.5 text-sm',
+                        'bg-brand-800 font-medium text-white' => request()->routeIs(
+                            'platform.backups.*'),
+                        'text-brand-100 hover:bg-brand-800/60' => !request()->routeIs(
+                            'platform.backups.*'),
+                    ])>
+                        Backups
+                    </a>
                 </nav>
 
                 <div class="ml-auto flex items-center gap-2">
