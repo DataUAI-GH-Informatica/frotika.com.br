@@ -47,7 +47,7 @@
                 ['label' => 'Fluxo de caixa', 'route' => 'cash-flow.index', 'active' => 'cash-flow.*'],
                 ['label' => 'Contas bancárias', 'route' => 'bank-accounts.index', 'active' => 'bank-accounts.*'],
             ],
-            'Análise' => [['label' => 'DRE veicular', 'route' => null]],
+            'Análise' => [['label' => 'DRE veicular', 'route' => 'dre.index', 'active' => 'dre.*']],
             'Configurações' => [
                 ['label' => 'Empresas', 'route' => 'companies.index', 'active' => 'companies.*'],
                 ['label' => 'Parceiros', 'route' => 'partners.index', 'active' => 'partners.*'],

@@ -8,6 +8,7 @@ use App\Domain\Finance\Actions\SeedDefaultFinancialCategories;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Fleet\Models\Vehicle;
+use App\Domain\Fuelings\Models\Fueling;
 use App\Domain\Reports\Dre\DreBuilder;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
@@ -196,6 +197,69 @@ final class DreBuilderTest extends TestCase
         $this->assertSame($vehicleId, $dre['vehicles'][0]['vehicle_id']);
     }
 
+    public function test_calcula_km_consumo_por_km_e_detalhe_por_categoria(): void
+    {
+        $company = $this->createCompany(905);
+        $author = User::factory()->create();
+
+        $this->setApportionmentMethod($company, 'none');
+
+        $tenant = app(TenantContext::class);
+
+        [$vehicleId, $revenueCategoryId] = $tenant->runFor(
+            $company,
+            function () use ($company): array {
+                app(SeedDefaultFinancialCategories::class)->execute($company);
+
+                $vehicle = Vehicle::query()->create([
+                    'plate' => 'QGG7G77',
+                    'type' => 'tractor',
+                    'status' => 'active',
+                    'ownership' => 'own',
+                ]);
+
+                $revenueCategory = FinancialCategory::query()->where('code', '1.1')->firstOrFail();
+
+                return [
+                    (int) $vehicle->getKey(),
+                    (int) $revenueCategory->getKey(),
+                ];
+            }
+        );
+
+        $this->createEntry($company, $author, $vehicleId, $revenueCategoryId, 'revenue', 100_000, '2026-07-10');
+
+        // O abastecimento gera a despesa de combustível via EntrySynchronizer
+        // (regra 7). 400 L (R$ 2.000) + 500 L (R$ 2.500) = R$ 4.500.
+        $this->createFueling($company, $author, $vehicleId, 1_000, 2.5, '2026-07-11 08:00:00');
+        $this->createFueling($company, $author, $vehicleId, 1_500, 3.0, '2026-07-18 08:00:00');
+
+        $dre = app(DreBuilder::class)->execute($company, '2026-07-01', '2026-07-31');
+
+        $vehicle = $dre['vehicles'][0];
+
+        $this->assertSame($vehicleId, $vehicle['vehicle_id']);
+        $this->assertSame(2_500, $vehicle['km']);
+        // 2500 km / (1000/2.5 + 1500/3.0 = 900 L) = 2,78 km/l
+        $this->assertSame(2.78, $vehicle['consumption']);
+        // Receita líquida R$ 1.000,00 / 2.500 km = 0,40
+        $this->assertSame(0.4, $vehicle['per_km']['revenue']);
+        // Custo total R$ 4.500,00 / 2.500 km = 1,80
+        $this->assertSame(1.8, $vehicle['per_km']['cost']);
+
+        $this->assertSame(2_500, $dre['totals']['km']);
+        $this->assertSame(2.78, $dre['totals']['consumption']);
+
+        $categoriesByCode = [];
+
+        foreach ($vehicle['categories'] as $category) {
+            $categoriesByCode[$category['code']] = $category['amount_cents'];
+        }
+
+        $this->assertSame(100_000, $categoriesByCode['1.1']);
+        $this->assertSame(-450_000, $categoriesByCode['3.1']);
+    }
+
     public function test_periodo_sem_dados_retorna_zerado_sem_erro(): void
     {
         $company = $this->createCompany(903);
@@ -237,6 +301,39 @@ final class DreBuilderTest extends TestCase
                 'status' => 'forecast',
                 'payment_method' => null,
                 'recurrence_id' => null,
+                'created_by' => $author->getKey(),
+            ]);
+        });
+    }
+
+    private function createFueling(
+        Company $company,
+        User $author,
+        int $vehicleId,
+        int $kmSinceLast,
+        float $kmPerLiter,
+        string $fueledAt,
+    ): void {
+        $tenant = app(TenantContext::class);
+
+        $tenant->runFor($company, function () use ($author, $vehicleId, $kmSinceLast, $kmPerLiter, $fueledAt): void {
+            $liters = $kmSinceLast / $kmPerLiter;
+
+            Fueling::query()->create([
+                'vehicle_id' => $vehicleId,
+                'driver_id' => null,
+                'supplier_id' => null,
+                'product' => 'diesel_s10',
+                'tank' => 'main',
+                'fueled_at' => $fueledAt,
+                'odometer' => $kmSinceLast,
+                'liters' => $liters,
+                'price_per_liter' => 5.0,
+                'total_cents' => (int) round($liters * 500),
+                'full_tank' => true,
+                'km_since_last' => $kmSinceLast,
+                'km_per_liter' => $kmPerLiter,
+                'payment_method' => 'pix',
                 'created_by' => $author->getKey(),
             ]);
         });
