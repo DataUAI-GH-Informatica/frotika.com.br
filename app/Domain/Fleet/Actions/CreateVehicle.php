@@ -30,10 +30,13 @@ final class CreateVehicle
             $attributes = $data->toAttributes();
             // Cadastro manual: veículo deixa de ser um stub provisionado do CT-e.
             $attributes['provisioned'] = false;
-            $attributes['odometer_current'] = $data->odometerInitial;
 
             /** @var Vehicle $vehicle */
             $vehicle = Vehicle::query()->create($attributes);
+
+            // odometer_current é denormalizado e fica fora do fillable por segurança.
+            $vehicle->setAttribute('odometer_current', $data->odometerInitial);
+            $vehicle->save();
 
             return $vehicle;
         });

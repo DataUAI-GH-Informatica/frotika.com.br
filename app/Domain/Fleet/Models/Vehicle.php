@@ -25,7 +25,34 @@ final class Vehicle extends Model
     use BelongsToCompany;
     use SoftDeletes;
 
-    protected $guarded = [];
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'plate',
+        'type',
+        'status',
+        'ownership',
+        'brand',
+        'model',
+        'year_manufacture',
+        'year_model',
+        'renavam',
+        'chassis',
+        'rntrc',
+        'axles',
+        'body_type',
+        'tare_kg',
+        'capacity_kg',
+        'capacity_m3',
+        'fuel_type',
+        'tank_capacity_l',
+        'odometer_initial',
+        'acquisition_date',
+        'acquisition_value_cents',
+        'provisioned',
+        'notes',
+    ];
 
     protected function casts(): array
     {

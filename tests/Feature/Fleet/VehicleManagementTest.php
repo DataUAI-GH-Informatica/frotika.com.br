@@ -91,6 +91,58 @@ final class VehicleManagementTest extends TestCase
         $response->assertSessionHasErrors(['plate']);
     }
 
+    public function test_mass_assignment_de_company_id_nao_altera_tenant_no_cadastro(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $otherOwner = User::factory()->create();
+        $otherGroup = $this->createGroup($otherOwner);
+        $otherCompany = $this->createCompany($otherGroup, '11222333000144');
+
+        $this
+            ->actingAs($owner)
+            ->post(route('vehicles.store'), [
+                'plate' => 'QWE1R23',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'company_id' => $otherCompany->getKey(),
+            ])
+            ->assertRedirect();
+
+        $vehicle = Vehicle::withoutGlobalScopes()->where('plate', 'QWE1R23')->firstOrFail();
+
+        $this->assertSame($company->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertNotSame($otherCompany->getKey(), (int) $vehicle->getAttribute('company_id'));
+    }
+
+    public function test_mass_assignment_de_company_id_nao_altera_tenant_na_edicao(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'TRE2E34');
+
+        $otherOwner = User::factory()->create();
+        $otherGroup = $this->createGroup($otherOwner);
+        $otherCompany = $this->createCompany($otherGroup, '11222333000155');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'TRE2E34',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'DAF',
+                'company_id' => $otherCompany->getKey(),
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertSame($company->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertNotSame($otherCompany->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertSame('DAF', $vehicle->getAttribute('brand'));
+    }
+
     public function test_membro_sem_papel_de_gestao_nao_cadastra(): void
     {
         [, , $group] = $this->createOwnerWithCompany();
