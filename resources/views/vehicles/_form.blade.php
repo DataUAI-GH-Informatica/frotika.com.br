@@ -17,6 +17,9 @@
     };
 
     $acquisitionDate = old('acquisition_date', $vehicle?->getAttribute('acquisition_date')?->format('Y-m-d'));
+    $crlvDueAt = old('crlv_due_at', $vehicle?->getAttribute('crlv_due_at')?->format('Y-m-d'));
+    $insuranceDueAt = old('insurance_due_at', $vehicle?->getAttribute('insurance_due_at')?->format('Y-m-d'));
+    $anttDueAt = old('antt_due_at', $vehicle?->getAttribute('antt_due_at')?->format('Y-m-d'));
     $selectedType = (string) ($enumVal('type') ?? 'tractor');
     $showBodyAndVolume = $selectedType !== \App\Domain\Fleet\Enums\VehicleType::Tractor->value;
 @endphp
@@ -101,6 +104,15 @@
             </div>
             <x-ui.input label="Tanque (litros)" name="tank_capacity_l" :value="$val('tank_capacity_l')" type="number"
                 inputmode="numeric" min="0" class="text-right font-mono tabular" placeholder="Opcional" />
+        </div>
+    </section>
+
+    <section>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900">Documentação e vencimentos</h2>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <x-ui.input label="Vencimento do CRLV" name="crlv_due_at" :value="$crlvDueAt" type="date" />
+            <x-ui.input label="Vencimento do seguro" name="insurance_due_at" :value="$insuranceDueAt" type="date" />
+            <x-ui.input label="Vencimento da ANTT" name="antt_due_at" :value="$anttDueAt" type="date" />
         </div>
     </section>
 

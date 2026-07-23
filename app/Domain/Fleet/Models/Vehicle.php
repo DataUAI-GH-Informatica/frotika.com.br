@@ -15,6 +15,7 @@ use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property VehicleType $type
@@ -31,6 +32,8 @@ final class Vehicle extends Model
     use HasFactory;
 
     use SoftDeletes;
+
+    public const DOCUMENT_ALERT_DAYS = 30;
 
     /**
      * @var list<string>
@@ -81,6 +84,44 @@ final class Vehicle extends Model
     {
         $this->setAttribute('provisioned', false);
         $this->save();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function documentDueFields(): array
+    {
+        return [
+            'crlv_due_at' => 'CRLV',
+            'insurance_due_at' => 'Seguro',
+            'antt_due_at' => 'ANTT',
+        ];
+    }
+
+    public function documentDaysToExpire(string $field): ?int
+    {
+        $dueAt = $this->getAttribute($field);
+
+        if (! $dueAt instanceof Carbon) {
+            return null;
+        }
+
+        return (int) Carbon::today()->diffInDays($dueAt->copy()->startOfDay(), false);
+    }
+
+    public function documentAlert(string $field): ?string
+    {
+        $days = $this->documentDaysToExpire($field);
+
+        if ($days === null) {
+            return null;
+        }
+
+        if ($days < 0) {
+            return 'expired';
+        }
+
+        return $days <= self::DOCUMENT_ALERT_DAYS ? 'expiring' : null;
     }
 
     protected function casts(): array

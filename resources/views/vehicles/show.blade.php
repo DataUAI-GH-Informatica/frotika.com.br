@@ -11,6 +11,28 @@
 
     $showsBodyAndVolume = $vehicle->type !== \App\Domain\Fleet\Enums\VehicleType::Tractor;
     $capacityM3 = (float) ($vehicle->getAttribute('capacity_m3') ?? 0);
+    $dueFields = \App\Domain\Fleet\Models\Vehicle::documentDueFields();
+
+    $badgeForDueField = function (string $field) use ($vehicle): ?array {
+        $alert = $vehicle->documentAlert($field);
+        $days = $vehicle->documentDaysToExpire($field);
+
+        if ($alert === 'expired') {
+            return [
+                'classes' => 'border-danger-300 bg-danger-50 text-danger-700',
+                'text' => 'Vencido',
+            ];
+        }
+
+        if ($alert === 'expiring' && $days !== null) {
+            return [
+                'classes' => 'border-warning-300 bg-warning-50 text-warning-700',
+                'text' => 'Vence em '.$days.'d',
+            ];
+        }
+
+        return null;
+    };
 @endphp
 
 @section('content')
@@ -143,6 +165,27 @@
                         {{ $vehicle->getAttribute('acquisition_value_cents') !== null ? Format::money((int) $vehicle->getAttribute('acquisition_value_cents')) : '—' }}
                     </dd>
                 </div>
+            </dl>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-4 lg:col-span-2">
+            <h2 class="mb-3 text-sm font-semibold text-slate-900">Documentação e vencimentos</h2>
+            <dl class="grid gap-3 text-sm sm:grid-cols-3">
+                @foreach ($dueFields as $field => $label)
+                    @php
+                        $dueAt = $vehicle->getAttribute($field);
+                        $badge = $badgeForDueField($field);
+                    @endphp
+                    <div>
+                        <dt class="text-2xs uppercase tracking-wide text-slate-400">{{ $label }}</dt>
+                        <dd class="mt-0.5 flex items-center gap-1.5">
+                            <span class="font-mono tabular text-slate-900">{{ $dueAt ? Format::date($dueAt) : '—' }}</span>
+                            @if ($badge)
+                                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold {{ $badge['classes'] }}">{{ $badge['text'] }}</span>
+                            @endif
+                        </dd>
+                    </div>
+                @endforeach
             </dl>
         </div>
     </div>

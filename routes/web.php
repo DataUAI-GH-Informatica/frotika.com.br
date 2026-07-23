@@ -57,6 +57,7 @@ use App\Http\Controllers\Maintenances\ShowEditMaintenanceController;
 use App\Http\Controllers\Maintenances\ShowMaintenanceController;
 use App\Http\Controllers\Maintenances\StoreMaintenanceController;
 use App\Http\Controllers\Maintenances\UpdateMaintenanceController;
+use App\Http\Controllers\Notifications\MarkAllNotificationsAsReadController;
 use App\Http\Controllers\Partners\DeactivateBusinessPartnerController;
 use App\Http\Controllers\Partners\ListBusinessPartnersController;
 use App\Http\Controllers\Partners\ShowBusinessPartnerController;
@@ -119,6 +120,8 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::post('/notificacoes/ler-todas', MarkAllNotificationsAsReadController::class)->name('notifications.read-all');
+
     Route::get('/confirmar-email', ShowVerifyEmailController::class)->name('verification.notice');
     Route::post('/confirmar-email/notificacao', SendVerificationEmailController::class)
         ->middleware('throttle:6,1')

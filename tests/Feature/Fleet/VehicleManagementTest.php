@@ -316,6 +316,63 @@ final class VehicleManagementTest extends TestCase
         $response->assertDontSee('m³');
     }
 
+    public function test_edicao_salva_datas_de_documentacao_do_veiculo(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'DOC9A01');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'DOC9A01',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Volvo',
+                'model' => 'VM 360',
+                'crlv_due_at' => '2027-06-10',
+                'insurance_due_at' => '2027-06-20',
+                'antt_due_at' => '2027-07-05',
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertSame('2027-06-10', $vehicle->crlv_due_at?->toDateString());
+        $this->assertSame('2027-06-20', $vehicle->insurance_due_at?->toDateString());
+        $this->assertSame('2027-07-05', $vehicle->antt_due_at?->toDateString());
+
+        $show = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+        $show->assertOk();
+        $show->assertSee('10/06/2027');
+        $show->assertSee('20/06/2027');
+        $show->assertSee('05/07/2027');
+    }
+
+    public function test_exibicao_marca_documento_vencido_com_selo_de_danger(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+
+        $vehicle = app(TenantContext::class)->runFor($company, function (): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => 'VNC1D00',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'crlv_due_at' => now()->subDay()->toDateString(),
+            ]);
+
+            return $vehicle;
+        });
+
+        $response = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+
+        $response->assertOk();
+        $response->assertSee('Vencido');
+        $response->assertSee('text-danger-700', false);
+    }
+
     private function makeVehicle(Company $company, string $plate, bool $provisioned = false): Vehicle
     {
         return app(TenantContext::class)->runFor($company, function () use ($plate, $provisioned): Vehicle {
