@@ -128,7 +128,7 @@
 
     @if ($canManage)
         <a href="{{ route('vehicles.create') }}"
-            class="fixed bottom-20 right-4 z-20 flex size-14 items-center justify-center rounded-full bg-brand-700 text-white active:bg-brand-800 md:hidden shadow-overlay"
+            class="fixed bottom-20 right-4 z-20 flex size-14 items-center justify-center rounded-lg bg-brand-700 text-white active:bg-brand-800 md:hidden shadow-overlay"
             aria-label="Novo veículo">
             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" stroke-linecap="round" />
