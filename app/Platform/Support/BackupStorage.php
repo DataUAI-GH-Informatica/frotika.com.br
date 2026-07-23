@@ -6,7 +6,6 @@ namespace App\Platform\Support;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use RuntimeException;
 
 final class BackupStorage
 {
@@ -81,13 +80,6 @@ final class BackupStorage
     {
         $disk = Storage::disk($this->diskName());
 
-        if (! method_exists($disk, 'path')) {
-            throw new RuntimeException('O disco de backup configurado nao suporta caminho local para download.');
-        }
-
-        /** @var callable(string): string $pathResolver */
-        $pathResolver = [$disk, 'path'];
-
-        return $pathResolver($relativePath);
+        return $disk->path($relativePath);
     }
 }

@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Domain\Fleet\Models;
 
 use App\Domain\Fleet\Enums\VehicleBodyType;
+use App\Domain\Fleet\Enums\VehicleFinancingType;
 use App\Domain\Fleet\Enums\VehicleFuelType;
 use App\Domain\Fleet\Enums\VehicleOwnership;
 use App\Domain\Fleet\Enums\VehicleStatus;
 use App\Domain\Fleet\Enums\VehicleType;
 use App\Support\Tenancy\BelongsToCompany;
+use Database\Factories\VehicleFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property VehicleType $type
@@ -23,9 +27,102 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 final class Vehicle extends Model
 {
     use BelongsToCompany;
+
+    /** @use HasFactory<VehicleFactory> */
+    use HasFactory;
+
     use SoftDeletes;
 
-    protected $guarded = [];
+    public const DOCUMENT_ALERT_DAYS = 30;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'plate',
+        'type',
+        'status',
+        'ownership',
+        'brand',
+        'model',
+        'year_manufacture',
+        'year_model',
+        'renavam',
+        'chassis',
+        'rntrc',
+        'engine_number',
+        'axles',
+        'axle_distance_m',
+        'tire_count',
+        'tire_size',
+        'body_type',
+        'tare_kg',
+        'capacity_kg',
+        'capacity_m3',
+        'fuel_type',
+        'tank_capacity_l',
+        'odometer_initial',
+        'acquisition_date',
+        'acquisition_value_cents',
+        'crlv_due_at',
+        'antt_due_at',
+        'insurance_due_at',
+        'is_financed',
+        'financing_type',
+        'creditor_name',
+        'notes',
+    ];
+
+    public function hasMinimumRegistrationData(): bool
+    {
+        return trim((string) $this->getAttribute('brand')) !== ''
+            && trim((string) $this->getAttribute('model')) !== ''
+            && $this->getAttribute('type') !== null;
+    }
+
+    public function markAsComplete(): void
+    {
+        $this->setAttribute('provisioned', false);
+        $this->save();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function documentDueFields(): array
+    {
+        return [
+            'crlv_due_at' => 'CRLV',
+            'insurance_due_at' => 'Seguro',
+            'antt_due_at' => 'ANTT',
+        ];
+    }
+
+    public function documentDaysToExpire(string $field): ?int
+    {
+        $dueAt = $this->getAttribute($field);
+
+        if (! $dueAt instanceof Carbon) {
+            return null;
+        }
+
+        return (int) Carbon::today()->diffInDays($dueAt->copy()->startOfDay(), false);
+    }
+
+    public function documentAlert(string $field): ?string
+    {
+        $days = $this->documentDaysToExpire($field);
+
+        if ($days === null) {
+            return null;
+        }
+
+        if ($days < 0) {
+            return 'expired';
+        }
+
+        return $days <= self::DOCUMENT_ALERT_DAYS ? 'expiring' : null;
+    }
 
     protected function casts(): array
     {
@@ -38,6 +135,8 @@ final class Vehicle extends Model
             'year_manufacture' => 'integer',
             'year_model' => 'integer',
             'axles' => 'integer',
+            'axle_distance_m' => 'decimal:2',
+            'tire_count' => 'integer',
             'tare_kg' => 'integer',
             'capacity_kg' => 'integer',
             'capacity_m3' => 'decimal:3',
@@ -46,7 +145,17 @@ final class Vehicle extends Model
             'odometer_current' => 'integer',
             'acquisition_date' => 'date',
             'acquisition_value_cents' => 'integer',
+            'crlv_due_at' => 'date',
+            'antt_due_at' => 'date',
+            'insurance_due_at' => 'date',
+            'is_financed' => 'boolean',
+            'financing_type' => VehicleFinancingType::class,
             'provisioned' => 'boolean',
         ];
+    }
+
+    protected static function newFactory(): VehicleFactory
+    {
+        return VehicleFactory::new();
     }
 }

@@ -91,6 +91,58 @@ final class VehicleManagementTest extends TestCase
         $response->assertSessionHasErrors(['plate']);
     }
 
+    public function test_mass_assignment_de_company_id_nao_altera_tenant_no_cadastro(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $otherOwner = User::factory()->create();
+        $otherGroup = $this->createGroup($otherOwner);
+        $otherCompany = $this->createCompany($otherGroup, '11222333000144');
+
+        $this
+            ->actingAs($owner)
+            ->post(route('vehicles.store'), [
+                'plate' => 'QWE1R23',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'company_id' => $otherCompany->getKey(),
+            ])
+            ->assertRedirect();
+
+        $vehicle = Vehicle::withoutGlobalScopes()->where('plate', 'QWE1R23')->firstOrFail();
+
+        $this->assertSame($company->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertNotSame($otherCompany->getKey(), (int) $vehicle->getAttribute('company_id'));
+    }
+
+    public function test_mass_assignment_de_company_id_nao_altera_tenant_na_edicao(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'TRE2E34');
+
+        $otherOwner = User::factory()->create();
+        $otherGroup = $this->createGroup($otherOwner);
+        $otherCompany = $this->createCompany($otherGroup, '11222333000155');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'TRE2E34',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'DAF',
+                'company_id' => $otherCompany->getKey(),
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertSame($company->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertNotSame($otherCompany->getKey(), (int) $vehicle->getAttribute('company_id'));
+        $this->assertSame('DAF', $vehicle->getAttribute('brand'));
+    }
+
     public function test_membro_sem_papel_de_gestao_nao_cadastra(): void
     {
         [, , $group] = $this->createOwnerWithCompany();
@@ -135,6 +187,55 @@ final class VehicleManagementTest extends TestCase
         ]);
     }
 
+    public function test_editar_veiculo_provisionado_sem_campos_minimos_mantem_provisionado(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'HJK2L45', provisioned: true);
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'HJK2L45',
+                'type' => VehicleType::Tractor->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Scania',
+                'model' => '',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->getKey(),
+            'provisioned' => true,
+        ]);
+    }
+
+    public function test_editar_veiculo_completo_nunca_retorna_para_provisionado(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'ZXC3V67', provisioned: false);
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'ZXC3V67',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Iveco',
+                'model' => 'Tector',
+                'provisioned' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $vehicle->getKey(),
+            'provisioned' => false,
+            'brand' => 'Iveco',
+            'model' => 'Tector',
+        ]);
+    }
+
     public function test_desativa_veiculo(): void
     {
         [$owner, $company] = $this->createOwnerWithCompany();
@@ -165,15 +266,274 @@ final class VehicleManagementTest extends TestCase
         $response->assertDontSee('BBB2B22');
     }
 
+    public function test_exibicao_de_hodometro_mostra_unidade_uma_unica_vez(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+
+        $vehicle = app(TenantContext::class)->runFor($company, function (): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => 'KMU1N23',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'odometer_initial' => 1331430,
+            ]);
+
+            $vehicle->setAttribute('odometer_current', 1331430);
+            $vehicle->save();
+
+            return $vehicle;
+        });
+
+        $response = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+
+        $response->assertOk();
+        $response->assertSee('1.331.430 km');
+        $response->assertDontSee('1.331.430 km km');
+    }
+
+    public function test_exibicao_nao_mostra_m3_para_cavalo_semirreboque(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+
+        $vehicle = app(TenantContext::class)->runFor($company, function (): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => 'VOL0M30',
+                'type' => VehicleType::Tractor->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'capacity_m3' => 12.500,
+            ]);
+
+            return $vehicle;
+        });
+
+        $response = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+
+        $response->assertOk();
+        $response->assertDontSee('m³');
+    }
+
+    public function test_edicao_salva_datas_de_documentacao_do_veiculo(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'DOC9A01');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'DOC9A01',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Volvo',
+                'model' => 'VM 360',
+                'crlv_due_at' => '2027-06-10',
+                'insurance_due_at' => '2027-06-20',
+                'antt_due_at' => '2027-07-05',
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertSame('2027-06-10', $vehicle->crlv_due_at?->toDateString());
+        $this->assertSame('2027-06-20', $vehicle->insurance_due_at?->toDateString());
+        $this->assertSame('2027-07-05', $vehicle->antt_due_at?->toDateString());
+
+        $show = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+        $show->assertOk();
+        $show->assertSee('10/06/2027');
+        $show->assertSee('20/06/2027');
+        $show->assertSee('05/07/2027');
+    }
+
+    public function test_exibicao_marca_documento_vencido_com_selo_de_danger(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+
+        $vehicle = app(TenantContext::class)->runFor($company, function (): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => 'VNC1D00',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'crlv_due_at' => now()->subDay()->toDateString(),
+            ]);
+
+            return $vehicle;
+        });
+
+        $response = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+
+        $response->assertOk();
+        $response->assertSee('Vencido');
+        $response->assertSee('text-danger-700', false);
+    }
+
+    public function test_veiculo_provisionado_aparece_no_filtro_e_some_ao_completar_cadastro(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $provisioned = $this->makeVehicle($company, 'PRV1A11', provisioned: true);
+        $this->makeVehicle($company, 'CMP2B22', provisioned: false);
+
+        $filtered = $this->actingAs($owner)->get(route('vehicles.index', ['provisioned' => 1]));
+
+        $filtered->assertOk();
+        $filtered->assertSee('PRV1A11');
+        $filtered->assertDontSee('CMP2B22');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $provisioned->getKey()]), [
+                'plate' => 'PRV1A11',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Scania',
+                'model' => 'R 460',
+            ])
+            ->assertRedirect();
+
+        $filteredAfter = $this->actingAs($owner)->get(route('vehicles.index', ['provisioned' => 1]));
+
+        $filteredAfter->assertOk();
+        $filteredAfter->assertDontSee('PRV1A11');
+    }
+
+    public function test_contador_de_provisorios_respeita_tenant_da_empresa_ativa(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $this->makeVehicle($company, 'TEN1A11', provisioned: true);
+        $this->makeVehicle($company, 'TEN2B22', provisioned: true);
+
+        $otherOwner = User::factory()->create();
+        $otherGroup = $this->createGroup($otherOwner);
+        $otherCompany = $this->createCompany($otherGroup, '22333444000177');
+        $this->makeVehicle($otherCompany, 'OUT3C33', provisioned: true);
+
+        $response = $this->actingAs($owner)->get(route('vehicles.index'));
+
+        $response->assertOk();
+        $response->assertSee('2 veículos aguardando cadastro completo.');
+        $response->assertDontSee('3 veículos aguardando cadastro completo.');
+    }
+
+    public function test_detalhe_de_veiculo_provisionado_exibe_acao_completar_cadastro(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'CTA7D77', provisioned: true);
+
+        $response = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+
+        $response->assertOk();
+        $response->assertSee('Cadastro incompleto');
+        $response->assertSee('Completar cadastro');
+    }
+
+    public function test_edicao_salva_bloco_de_especificacoes_e_propriedade(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+        $vehicle = $this->makeVehicle($company, 'ESP4P44');
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'ESP4P44',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Leased->value,
+                'brand' => 'Volvo',
+                'model' => 'VM 360',
+                'engine_number' => 'ENG-4455AB',
+                'axle_distance_m' => '4.15',
+                'tire_count' => '10',
+                'tire_size' => '295/80R22.5',
+                'is_financed' => '1',
+                'financing_type' => 'leasing',
+                'creditor_name' => 'Itaú BBA',
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertSame('ENG-4455AB', $vehicle->getAttribute('engine_number'));
+        $this->assertSame('4.15', (string) $vehicle->getAttribute('axle_distance_m'));
+        $this->assertSame(10, (int) $vehicle->getAttribute('tire_count'));
+        $this->assertSame('295/80R22.5', $vehicle->getAttribute('tire_size'));
+        $this->assertTrue((bool) $vehicle->getAttribute('is_financed'));
+        $this->assertSame('leasing', $vehicle->getAttribute('financing_type')?->value);
+        $this->assertSame('Itaú BBA', $vehicle->getAttribute('creditor_name'));
+
+        $show = $this->actingAs($owner)->get(route('vehicles.show', ['vehicle' => $vehicle->getKey()]));
+        $show->assertOk();
+        $show->assertSee('ENG-4455AB');
+        $show->assertSee('4.15 m');
+        $show->assertSee('295/80R22.5');
+        $show->assertSee('Leasing');
+        $show->assertSee('Itaú BBA');
+    }
+
+    public function test_desligar_toggle_de_financiamento_limpa_campos_relacionados(): void
+    {
+        [$owner, $company] = $this->createOwnerWithCompany();
+
+        $vehicle = app(TenantContext::class)->runFor($company, function (): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => 'LMP5R55',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Scania',
+                'model' => 'R 450',
+                'is_financed' => true,
+                'financing_type' => 'bank_loan',
+                'creditor_name' => 'Banco do Brasil',
+            ]);
+
+            return $vehicle;
+        });
+
+        $this
+            ->actingAs($owner)
+            ->put(route('vehicles.update', ['vehicle' => $vehicle->getKey()]), [
+                'plate' => 'LMP5R55',
+                'type' => VehicleType::Truck->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+                'brand' => 'Scania',
+                'model' => 'R 450',
+            ])
+            ->assertRedirect();
+
+        $vehicle = $vehicle->refresh();
+
+        $this->assertFalse((bool) $vehicle->getAttribute('is_financed'));
+        $this->assertNull($vehicle->getAttribute('financing_type'));
+        $this->assertNull($vehicle->getAttribute('creditor_name'));
+    }
+
     private function makeVehicle(Company $company, string $plate, bool $provisioned = false): Vehicle
     {
-        return app(TenantContext::class)->runFor($company, fn (): Vehicle => Vehicle::query()->create([
-            'plate' => $plate,
-            'type' => VehicleType::Tractor->value,
-            'status' => VehicleStatus::Active->value,
-            'ownership' => VehicleOwnership::Own->value,
-            'provisioned' => $provisioned,
-        ]));
+        return app(TenantContext::class)->runFor($company, function () use ($plate, $provisioned): Vehicle {
+            /** @var Vehicle $vehicle */
+            $vehicle = Vehicle::query()->create([
+                'plate' => $plate,
+                'type' => VehicleType::Tractor->value,
+                'status' => VehicleStatus::Active->value,
+                'ownership' => VehicleOwnership::Own->value,
+            ]);
+
+            if ($provisioned) {
+                $vehicle->setAttribute('provisioned', true);
+                $vehicle->save();
+            }
+
+            return $vehicle;
+        });
     }
 
     /**

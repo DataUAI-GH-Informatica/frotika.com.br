@@ -8,14 +8,18 @@ use App\Domain\Finance\Enums\FinancialEntryStatus;
 use App\Domain\Finance\Enums\FinancialEntryType;
 use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialEntry;
+use App\Domain\Fleet\Models\Driver;
+use App\Domain\Fleet\Models\Vehicle;
 use App\Domain\Tenancy\Models\Company;
 use App\Models\User;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Notifications\Billing\GroupLicenseInvoiceDueTodayNotification;
+use App\Notifications\Fleet\ExpiringDocumentsNotification;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
@@ -236,6 +240,138 @@ Artisan::command('frotika:notify-group-license-due-today', function (): int {
     return Command::SUCCESS;
 })->purpose('Envia e-mail no dia do vencimento para boletos de licenca ainda nao pagos');
 
+Artisan::command('frotika:notify-expiring-documents {--days=30}', function (TenantContext $tenant): int {
+    $windowInput = (int) $this->option('days');
+    $windowDays = $windowInput > 0 ? $windowInput : Vehicle::DOCUMENT_ALERT_DAYS;
+    $today = Carbon::today();
+    $limitDate = $today->copy()->addDays($windowDays)->toDateString();
+
+    $companies = Company::query()
+        ->with([
+            'group.users' => static fn ($query) => $query->wherePivotIn('role', ['owner', 'admin']),
+        ])
+        ->get();
+
+    $sent = 0;
+    $companiesNotified = 0;
+    $withoutRecipient = 0;
+    $documents = 0;
+
+    foreach ($companies as $company) {
+        $items = $tenant->runFor($company, function () use ($today, $limitDate, $windowDays): array {
+            $rows = [];
+
+            $drivers = Driver::query()
+                ->whereNotNull('cnh_expires_at')
+                ->whereDate('cnh_expires_at', '<=', $limitDate)
+                ->get(['id', 'name', 'cnh_expires_at']);
+
+            foreach ($drivers as $driver) {
+                $dueAt = $driver->getAttribute('cnh_expires_at');
+
+                if (! $dueAt instanceof Carbon) {
+                    continue;
+                }
+
+                $daysToExpire = (int) $today->diffInDays($dueAt->copy()->startOfDay(), false);
+                $alert = $daysToExpire < 0 ? 'expired' : ($daysToExpire <= $windowDays ? 'expiring' : null);
+
+                if ($alert === null) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'kind' => 'driver',
+                    'label' => 'CNH',
+                    'reference' => (string) $driver->getAttribute('name'),
+                    'due_at' => $dueAt->toDateString(),
+                    'days_to_expire' => $daysToExpire,
+                    'alert' => $alert,
+                ];
+            }
+
+            $vehicles = Vehicle::query()
+                ->where(function ($query) use ($limitDate): void {
+                    foreach (array_keys(Vehicle::documentDueFields()) as $field) {
+                        $query->orWhere(function ($inner) use ($field, $limitDate): void {
+                            $inner->whereNotNull($field)
+                                ->whereDate($field, '<=', $limitDate);
+                        });
+                    }
+                })
+                ->get(['id', 'plate', 'crlv_due_at', 'insurance_due_at', 'antt_due_at']);
+
+            foreach ($vehicles as $vehicle) {
+                foreach (Vehicle::documentDueFields() as $field => $label) {
+                    $dueAt = $vehicle->getAttribute($field);
+
+                    if (! $dueAt instanceof Carbon) {
+                        continue;
+                    }
+
+                    $daysToExpire = (int) $today->diffInDays($dueAt->copy()->startOfDay(), false);
+                    $alert = $daysToExpire < 0 ? 'expired' : ($daysToExpire <= $windowDays ? 'expiring' : null);
+
+                    if ($alert === null) {
+                        continue;
+                    }
+
+                    $rows[] = [
+                        'kind' => 'vehicle',
+                        'label' => $label,
+                        'reference' => (string) $vehicle->getAttribute('plate'),
+                        'due_at' => $dueAt->toDateString(),
+                        'days_to_expire' => $daysToExpire,
+                        'alert' => $alert,
+                    ];
+                }
+            }
+
+            return $rows;
+        });
+
+        if ($items === []) {
+            continue;
+        }
+
+        $group = $company->group;
+        $recipients = $group?->users
+            ?->filter(static fn (User $user): bool => trim((string) $user->email) !== '')
+            ->unique('id')
+            ->values();
+
+        if ($recipients === null || $recipients->isEmpty()) {
+            $withoutRecipient++;
+
+            continue;
+        }
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new ExpiringDocumentsNotification($company, $items));
+            $sent++;
+        }
+
+        $companiesNotified++;
+        $documents += count($items);
+    }
+
+    if ($sent === 0) {
+        $this->info('Nenhum vencimento dentro da janela para notificar.');
+
+        return Command::SUCCESS;
+    }
+
+    $this->info(sprintf(
+        'Notificacoes de vencimento enviadas: %d, empresas=%d, documentos=%d, sem destinatario=%d.',
+        $sent,
+        $companiesNotified,
+        $documents,
+        $withoutRecipient,
+    ));
+
+    return Command::SUCCESS;
+})->purpose('Envia alertas diarios de vencimento de CNH e documentos de veiculos (e-mail + sino)');
+
 Schedule::command('frotika:generate-recurrences')
     ->monthlyOn(1, '01:30')
     ->withoutOverlapping();
@@ -246,6 +382,10 @@ Schedule::command('frotika:recalculate-balances')
 
 Schedule::command('frotika:notify-group-license-due-today')
     ->dailyAt('08:00')
+    ->withoutOverlapping();
+
+Schedule::command('frotika:notify-expiring-documents')
+    ->dailyAt('08:05')
     ->withoutOverlapping();
 
 Schedule::command('backup:run --only-db')

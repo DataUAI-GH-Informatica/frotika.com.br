@@ -28,7 +28,7 @@ final class GroupLicenseInvoiceIssuedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $groupName = (string) ($this->invoice->group?->name ?? 'seu grupo');
+        $groupName = (string) ($this->invoice->group->name ?? 'seu grupo');
 
         $mail = (new MailMessage)
             ->subject(sprintf('Novo boleto da licença do grupo %s — Frotika', $groupName))

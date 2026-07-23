@@ -98,6 +98,8 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('topbarCurrentCompanyId', null);
                 $view->with('topbarCurrentCompanyName', null);
                 $view->with('licenseBanner', null);
+                $view->with('topbarNotifications', collect());
+                $view->with('topbarUnreadNotifications', 0);
                 $view->with('isPlatformAdmin', $user instanceof User && $user->isPlatformAdmin());
 
                 return;
@@ -111,6 +113,25 @@ class AppServiceProvider extends ServiceProvider
             $currentCompanyName = $companies
                 ->firstWhere('id', $user->current_company_id)
                 ?->getAttribute('trade_name');
+
+            $topbarUnreadNotifications = $user->unreadNotifications()->count();
+            $topbarNotifications = $user->notifications()
+                ->latest()
+                ->limit(8)
+                ->get()
+                ->map(static function ($notification): array {
+                    $data = $notification->data;
+
+                    return [
+                        'id' => $notification->id,
+                        'title' => (string) ($data['title'] ?? 'Notificação'),
+                        'message' => (string) ($data['message'] ?? ''),
+                        'level' => (string) ($data['level'] ?? 'info'),
+                        'action_url' => is_string($data['action_url'] ?? null) ? $data['action_url'] : null,
+                        'read_at' => $notification->read_at,
+                        'created_at' => $notification->created_at,
+                    ];
+                });
 
             $licenseBanner = null;
 
@@ -151,6 +172,8 @@ class AppServiceProvider extends ServiceProvider
             $view->with('topbarCurrentCompanyId', $user->current_company_id);
             $view->with('topbarCurrentCompanyName', $currentCompanyName);
             $view->with('licenseBanner', $licenseBanner);
+            $view->with('topbarNotifications', $topbarNotifications);
+            $view->with('topbarUnreadNotifications', $topbarUnreadNotifications);
             $view->with('isPlatformAdmin', $user->isPlatformAdmin());
         });
     }
