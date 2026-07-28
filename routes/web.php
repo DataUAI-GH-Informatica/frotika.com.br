@@ -17,6 +17,7 @@ use App\Http\Controllers\Finance\CancelFinancialEntryController;
 use App\Http\Controllers\Finance\DeactivateBankAccountController;
 use App\Http\Controllers\Finance\ListBankAccountsController;
 use App\Http\Controllers\Finance\ListFinancialEntriesController;
+use App\Http\Controllers\Finance\ReverseFinancialEntrySettlementController;
 use App\Http\Controllers\Finance\SettleFinancialEntryController;
 use App\Http\Controllers\Finance\ShowCashFlowController;
 use App\Http\Controllers\Finance\ShowCreateBankAccountController;
@@ -208,6 +209,9 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/lancamentos/{entry}/baixa', SettleFinancialEntryController::class)
             ->whereNumber('entry')
             ->name('financial-entries.settle');
+        Route::post('/lancamentos/{entry}/reverter-baixa', ReverseFinancialEntrySettlementController::class)
+            ->whereNumber('entry')
+            ->name('financial-entries.unsettle');
         Route::delete('/lancamentos/{entry}', CancelFinancialEntryController::class)
             ->whereNumber('entry')
             ->name('financial-entries.destroy');
