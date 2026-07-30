@@ -42,6 +42,7 @@ final class CreateFueling
             $attributes = $data->toAttributes();
             $attributes['company_id'] = $company->getKey();
             $attributes['created_by'] = $actor->getKey();
+            $attributes['import_code'] = $data->importCode;
 
             /** @var Fueling $fueling */
             $fueling = Fueling::query()->create($attributes);

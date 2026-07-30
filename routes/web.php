@@ -44,11 +44,15 @@ use App\Http\Controllers\Fleet\StoreVehicleController;
 use App\Http\Controllers\Fleet\UpdateDriverController;
 use App\Http\Controllers\Fleet\UpdateVehicleController;
 use App\Http\Controllers\Fuelings\DeleteFuelingController;
+use App\Http\Controllers\Fuelings\DownloadFuelingImportTemplateController;
 use App\Http\Controllers\Fuelings\ListFuelingsController;
 use App\Http\Controllers\Fuelings\ShowCreateFuelingController;
 use App\Http\Controllers\Fuelings\ShowEditFuelingController;
 use App\Http\Controllers\Fuelings\ShowFuelingController;
+use App\Http\Controllers\Fuelings\ShowFuelingImportResultController;
+use App\Http\Controllers\Fuelings\ShowImportFuelingsController;
 use App\Http\Controllers\Fuelings\StoreFuelingController;
+use App\Http\Controllers\Fuelings\StoreFuelingImportController;
 use App\Http\Controllers\Fuelings\UpdateFuelingController;
 use App\Http\Controllers\Maintenances\DeleteMaintenanceController;
 use App\Http\Controllers\Maintenances\ListMaintenancesController;
@@ -247,6 +251,12 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/abastecimentos', ListFuelingsController::class)->name('fuelings.index');
         Route::get('/abastecimentos/novo', ShowCreateFuelingController::class)->name('fuelings.create');
         Route::post('/abastecimentos', StoreFuelingController::class)->name('fuelings.store');
+        Route::get('/abastecimentos/importar', ShowImportFuelingsController::class)->name('fuelings.import');
+        Route::post('/abastecimentos/importar', StoreFuelingImportController::class)->name('fuelings.import.store');
+        Route::get('/abastecimentos/importar/modelo', DownloadFuelingImportTemplateController::class)
+            ->name('fuelings.import.template');
+        Route::get('/abastecimentos/importacoes/{batch}', ShowFuelingImportResultController::class)
+            ->name('fuelings.import.result');
         Route::get('/abastecimentos/{fueling}', ShowFuelingController::class)
             ->whereNumber('fueling')
             ->name('fuelings.show');

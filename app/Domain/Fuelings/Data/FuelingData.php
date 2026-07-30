@@ -29,6 +29,7 @@ final readonly class FuelingData
         public ?string $invoiceNumber = null,
         public ?string $notes = null,
         public bool $allowOdometerRollback = false,
+        public ?string $importCode = null,
     ) {}
 
     /**
@@ -55,12 +56,17 @@ final readonly class FuelingData
             invoiceNumber: self::nullableString($data['invoice_number'] ?? null),
             notes: self::nullableString($data['notes'] ?? null),
             allowOdometerRollback: (bool) ($data['allow_odometer_rollback'] ?? false),
+            importCode: self::nullableString($data['import_code'] ?? null),
         );
     }
 
     /**
      * Resolve total e preço por litro: o usuário informa o total (obrigatório);
      * quando não informa o preço, deriva de total ÷ litros.
+     *
+     * `import_code` fica de fora de propósito: é atributo só de criação, gravado
+     * pelo CreateFueling. Sair daqui evita que uma edição pela tela, que reusa
+     * este mesmo array, apague a chave de idempotência da planilha.
      *
      * @return array<string, mixed>
      */

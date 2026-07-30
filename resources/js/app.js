@@ -69,3 +69,4 @@ import './echo';
 import './toast';
 import './notifications';
 import './cte-import';
+import './fueling-import';

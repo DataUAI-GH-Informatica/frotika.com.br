@@ -21,6 +21,34 @@ final class Brl
             return $value;
         }
 
+        $normalized = self::normalizeDecimal($value);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        return (int) round(((float) $normalized) * 100);
+    }
+
+    /**
+     * Converte um decimal digitado em pt-BR para a notacao que o PHP entende,
+     * sem virar float no caminho. Serve tanto para dinheiro quanto para litros e
+     * preco por litro, que nao sao centavos mas chegam com a mesma pontuacao.
+     */
+    public static function normalizeDecimal(int|float|string|null $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_int($value)) {
+            return (string) $value;
+        }
+
+        if (is_float($value)) {
+            return rtrim(rtrim(sprintf('%.6F', $value), '0'), '.');
+        }
+
         $raw = trim($value);
 
         if ($raw === '') {
@@ -38,11 +66,13 @@ final class Brl
 
         if ($hasComma && $hasDot) {
             // pt-BR: ponto e milhar, virgula e decimal.
-            $normalized = str_replace(['.', ','], ['', '.'], $normalized);
-        } elseif ($hasComma) {
-            $normalized = str_replace(',', '.', $normalized);
+            return str_replace(['.', ','], ['', '.'], $normalized);
         }
 
-        return (int) round(((float) $normalized) * 100);
+        if ($hasComma) {
+            return str_replace(',', '.', $normalized);
+        }
+
+        return $normalized;
     }
 }

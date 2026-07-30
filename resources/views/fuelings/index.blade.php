@@ -9,11 +9,27 @@
             <p class="mt-0.5 text-sm text-slate-500">{{ $fuelings->total() }} {{ \Illuminate\Support\Str::plural('abastecimento', $fuelings->total()) }}</p>
         </div>
         @if ($canManage)
-            <div class="hidden lg:block">
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-ui.link-button href="{{ route('fuelings.import.template') }}" variant="ghost">Baixar planilha modelo</x-ui.link-button>
+                <x-ui.link-button href="{{ route('fuelings.import') }}" variant="secondary">Importar abastecimentos</x-ui.link-button>
                 <x-ui.link-button href="{{ route('fuelings.create') }}" variant="primary">Novo abastecimento</x-ui.link-button>
             </div>
         @endif
     </div>
+
+    {{-- No celular o "novo" fica no botão do polegar; importar e modelo ficam aqui. --}}
+    @if ($canManage)
+        <div class="mb-3 flex items-stretch gap-2 lg:hidden">
+            <a href="{{ route('fuelings.import') }}"
+                class="flex h-11 flex-1 items-center justify-center rounded-md border border-slate-300 bg-white text-sm font-medium text-slate-700 active:bg-slate-100">
+                Importar planilha
+            </a>
+            <a href="{{ route('fuelings.import.template') }}"
+                class="flex h-11 flex-1 items-center justify-center rounded-md text-sm font-medium text-slate-700 active:bg-slate-100">
+                Baixar modelo
+            </a>
+        </div>
+    @endif
 
     <form method="GET" action="{{ route('fuelings.index') }}"
         class="mb-3 grid gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -78,10 +94,11 @@
                             <td colspan="7">
                                 <div class="px-4 py-12 text-center">
                                     <p class="font-display text-lg font-semibold text-slate-900">Nenhum abastecimento encontrado.</p>
-                                    <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">Lance um abastecimento para acompanhar consumo e custo por veículo.</p>
+                                    <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">Lance um abastecimento para acompanhar consumo e custo por veículo, ou importe de uma vez a planilha que você já usa.</p>
                                     @if ($canManage)
-                                        <div class="mt-4 flex justify-center">
+                                        <div class="mt-4 flex flex-wrap justify-center gap-2">
                                             <x-ui.link-button href="{{ route('fuelings.create') }}" variant="primary">Novo abastecimento</x-ui.link-button>
+                                            <x-ui.link-button href="{{ route('fuelings.import') }}" variant="secondary">Importar planilha</x-ui.link-button>
                                         </div>
                                     @endif
                                 </div>
@@ -120,6 +137,7 @@
             @empty
                 <div class="px-4 py-12 text-center">
                     <p class="font-display text-lg font-semibold text-slate-900">Nenhum abastecimento encontrado.</p>
+                    <p class="mx-auto mt-1 max-w-xs text-sm text-slate-500">Lance no posto pelo botão abaixo ou importe a sua planilha.</p>
                 </div>
             @endforelse
         </div>

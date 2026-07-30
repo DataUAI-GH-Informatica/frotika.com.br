@@ -112,28 +112,7 @@ abstract class FuelingRequest extends FormRequest
 
     private function normalizeDecimal(string $key): ?string
     {
-        $raw = trim((string) $this->input($key, ''));
-
-        if ($raw === '') {
-            return null;
-        }
-
-        $normalized = preg_replace('/[^\d,.-]/', '', $raw) ?? '';
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        $hasComma = str_contains($normalized, ',');
-        $hasDot = str_contains($normalized, '.');
-
-        if ($hasComma && $hasDot) {
-            $normalized = str_replace(['.', ','], ['', '.'], $normalized);
-        } elseif ($hasComma) {
-            $normalized = str_replace(',', '.', $normalized);
-        }
-
-        return $normalized;
+        return Brl::normalizeDecimal((string) $this->input($key, ''));
     }
 
     protected function nullableTrimmed(string $key): ?string

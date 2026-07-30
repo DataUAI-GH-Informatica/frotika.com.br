@@ -16,7 +16,7 @@ composer setup                  # instalação inicial
 composer dev                    # servidor + queue + logs + vite
 composer test                   # config:clear + artisan test
 vendor/bin/pint                 # formatação (rodar antes de terminar)
-vendor/bin/phpstan analyse      # Larastan nível 6
+composer analyse                # Larastan nível 6 (phpstan com memória suficiente)
 php artisan frotika:demo --fresh    # banco de demonstração com dado realista
 ```
 

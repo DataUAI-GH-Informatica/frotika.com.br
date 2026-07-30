@@ -132,6 +132,7 @@ composer require laravel/horizon                # filas (Redis; ver ADR-007)
 composer require laravel/reverb                 # websocket (ver ADR-007)
 composer require laravel/telescope              # observabilidade (prod sob demanda; ver ADR-007)
 composer require brick/money                    # aritmética monetária
+composer require phpoffice/phpspreadsheet       # leitura/escrita de XLSX (importação de abastecimentos)
 
 # Desenvolvimento
 composer require --dev laravel/boost            # ferramentas para o agente
@@ -450,8 +451,9 @@ Uma viagem pode ter N CT-es. Um CT-e pertence a no máximo 1 viagem. Quando N CT
 | `km_since_last` | int, null | **calculado** |
 | `km_per_liter` | decimal(6,3), null | **calculado** |
 | `notes` | text, null | |
+| `import_code` | string(60), null | chave de idempotência da planilha de importação |
 
-Índice: (`company_id`,`vehicle_id`,`fueled_at`).
+Índice: (`company_id`,`vehicle_id`,`fueled_at`). Único: (`company_id`,`import_code`).
 
 **Regra de cálculo de consumo — implementar exatamente assim:**
 
@@ -474,6 +476,8 @@ Se odometer atual <= odometer anterior → erro de validação, bloquear.
 - `odometer` deve ser ≥ ao último odômetro conhecido do veículo (viagem ou abastecimento). Se menor, exigir confirmação explícita ("troca de painel / correção").
 - `liters` ≤ `tank_capacity_l × 1.15` → aviso, não bloqueio.
 - `km_per_liter` fora de ±40% da média dos últimos 5 → sinalizar na listagem, não bloquear.
+
+**Importação por planilha.** Uma linha por abastecimento em XLSX, até 1000 por arquivo. Cabeçalho semântico em pt-BR casado por nome, não por posição; valor de enum ou rótulo pt-BR são equivalentes. O veículo é resolvido pela placa e o motorista pelo CPF — os dois precisam estar cadastrados, ou a linha falha. O posto é cadastrado sozinho a partir do CNPJ, na política de enriquecimento de [`docs/adr/004-importacao-de-cte-e-parceiros.md`](adr/004-importacao-de-cte-e-parceiros.md). Reimportar não duplica: com `codigo_abastecimento` preenchido ele é a chave (único por empresa); sem código, a assinatura placa + data/hora + litros + valor total. Duplicidade é linha ignorada, não falha. Processamento assíncrono em um job por planilha (a ordem importa para o km/l), com tela de resultado linha a linha e aviso por websocket. A persistência passa por `CreateFueling`, então o `financial_entry` sai do observer como em qualquer lançamento (regra 7). Detalhes em [`docs/adr/009-importacao-de-abastecimentos-por-planilha.md`](adr/009-importacao-de-abastecimentos-por-planilha.md).
 
 ### 5.5 Manutenções
 
