@@ -21,6 +21,8 @@
         $topbarCurrentCompanyId = $topbarCurrentCompanyId ?? null;
         $topbarCurrentCompanyName = $topbarCurrentCompanyName ?? 'Empresa ativa';
         $licenseBanner = $licenseBanner ?? null;
+        $topbarNotifications = $topbarNotifications ?? collect();
+        $topbarUnreadNotifications = $topbarUnreadNotifications ?? 0;
 
         $licenseStatusChip = null;
 
@@ -172,6 +174,69 @@
                         <x-ui.link-button href="{{ route('cte.import') }}" variant="ghost" size="sm">Importar
                             CT-e</x-ui.link-button>
                     </div>
+
+                    <details class="relative">
+                        <summary
+                            class="list-none inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 px-2 text-slate-700 hover:bg-slate-50">
+                            <span class="relative inline-flex items-center">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5" aria-hidden="true">
+                                    <path d="M12 3a5 5 0 0 0-5 5v3.2c0 .9-.3 1.8-.9 2.5L4.9 15a1 1 0 0 0 .8 1.6h12.6a1 1 0 0 0 .8-1.6l-1.2-1.3a3.8 3.8 0 0 1-.9-2.5V8a5 5 0 0 0-5-5Z"
+                                        stroke-linejoin="round" />
+                                    <path d="M9.5 18a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
+                                </svg>
+                                @if ($topbarUnreadNotifications > 0)
+                                    <span
+                                        class="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] font-semibold text-white">{{ $topbarUnreadNotifications > 99 ? '99+' : $topbarUnreadNotifications }}</span>
+                                @endif
+                            </span>
+                        </summary>
+
+                        <div class="absolute right-0 z-30 mt-2 w-[22rem] rounded-lg border border-slate-200 bg-white p-2 shadow-overlay">
+                            <div class="mb-1 flex items-center justify-between px-2 py-1">
+                                <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Notificações</h2>
+                                @if ($topbarUnreadNotifications > 0)
+                                    <form method="POST" action="{{ route('notifications.read-all') }}">
+                                        @csrf
+                                        <button type="submit" class="text-2xs font-medium text-brand-700 hover:text-brand-800">Marcar como lidas</button>
+                                    </form>
+                                @endif
+                            </div>
+
+                            @if ($topbarNotifications->isEmpty())
+                                <p class="px-2 py-4 text-sm text-slate-500">Sem notificações no momento.</p>
+                            @else
+                                <div class="max-h-80 space-y-1 overflow-auto">
+                                    @foreach ($topbarNotifications as $notification)
+                                        @php
+                                            $notificationLevelClasses = match ($notification['level']) {
+                                                'danger' => 'border-l-danger-500',
+                                                'warning' => 'border-l-warning-500',
+                                                default => 'border-l-info-500',
+                                            };
+                                        @endphp
+                                        <div @class([
+                                            'rounded-md border border-slate-200 border-l-4 px-2 py-2',
+                                            $notificationLevelClasses,
+                                            'bg-slate-50' => $notification['read_at'] === null,
+                                        ])>
+                                            @if ($notification['action_url'])
+                                                <a href="{{ $notification['action_url'] }}" class="block">
+                                            @endif
+                                            <p class="text-sm font-medium text-slate-900">{{ $notification['title'] }}</p>
+                                            @if ($notification['message'] !== '')
+                                                <p class="mt-0.5 text-xs text-slate-600">{{ $notification['message'] }}</p>
+                                            @endif
+                                            <p class="mt-1 text-2xs text-slate-400">{{ Format::dateTime($notification['created_at']) }}</p>
+                                            @if ($notification['action_url'])
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </details>
 
                     <a href="{{ route('welcome') }}"
                         class="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">

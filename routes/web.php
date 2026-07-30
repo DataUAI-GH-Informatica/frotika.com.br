@@ -17,6 +17,7 @@ use App\Http\Controllers\Finance\CancelFinancialEntryController;
 use App\Http\Controllers\Finance\DeactivateBankAccountController;
 use App\Http\Controllers\Finance\ListBankAccountsController;
 use App\Http\Controllers\Finance\ListFinancialEntriesController;
+use App\Http\Controllers\Finance\ReverseFinancialEntrySettlementController;
 use App\Http\Controllers\Finance\SettleFinancialEntryController;
 use App\Http\Controllers\Finance\ShowCashFlowController;
 use App\Http\Controllers\Finance\ShowCreateBankAccountController;
@@ -61,6 +62,7 @@ use App\Http\Controllers\Maintenances\ShowEditMaintenanceController;
 use App\Http\Controllers\Maintenances\ShowMaintenanceController;
 use App\Http\Controllers\Maintenances\StoreMaintenanceController;
 use App\Http\Controllers\Maintenances\UpdateMaintenanceController;
+use App\Http\Controllers\Notifications\MarkAllNotificationsAsReadController;
 use App\Http\Controllers\Partners\DeactivateBusinessPartnerController;
 use App\Http\Controllers\Partners\ListBusinessPartnersController;
 use App\Http\Controllers\Partners\ShowBusinessPartnerController;
@@ -123,6 +125,8 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::post('/notificacoes/ler-todas', MarkAllNotificationsAsReadController::class)->name('notifications.read-all');
+
     Route::get('/confirmar-email', ShowVerifyEmailController::class)->name('verification.notice');
     Route::post('/confirmar-email/notificacao', SendVerificationEmailController::class)
         ->middleware('throttle:6,1')
@@ -209,6 +213,9 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/lancamentos/{entry}/baixa', SettleFinancialEntryController::class)
             ->whereNumber('entry')
             ->name('financial-entries.settle');
+        Route::post('/lancamentos/{entry}/reverter-baixa', ReverseFinancialEntrySettlementController::class)
+            ->whereNumber('entry')
+            ->name('financial-entries.unsettle');
         Route::delete('/lancamentos/{entry}', CancelFinancialEntryController::class)
             ->whereNumber('entry')
             ->name('financial-entries.destroy');

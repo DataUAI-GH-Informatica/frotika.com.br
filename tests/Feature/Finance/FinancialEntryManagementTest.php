@@ -146,6 +146,34 @@ final class FinancialEntryManagementTest extends TestCase
         ]);
     }
 
+    public function test_reverter_baixa_de_lancamento_manual_volta_para_previsto_e_recalcula_saldo(): void
+    {
+        [$owner, $company, $base] = $this->scenario(10);
+        $entryId = $this->createForecastRevenue($company, $base, $owner);
+
+        $this->actingAs($owner)->post(route('financial-entries.settle', ['entry' => $entryId]), [
+            'bank_account_id' => $base['account'],
+            'paid_at' => '2026-07-20',
+            'payment_method' => 'pix',
+        ])->assertRedirect(route('financial-entries.show', ['entry' => $entryId]));
+
+        $this->actingAs($owner)
+            ->post(route('financial-entries.unsettle', ['entry' => $entryId]))
+            ->assertRedirect(route('financial-entries.show', ['entry' => $entryId]));
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryId,
+            'status' => 'forecast',
+            'paid_at' => null,
+            'bank_account_id' => $base['account'],
+        ]);
+
+        $this->assertDatabaseHas('bank_accounts', [
+            'id' => $base['account'],
+            'current_balance_cents' => 0,
+        ]);
+    }
+
     public function test_lancamento_sincronizado_nao_abre_edicao(): void
     {
         [$owner, $company, $base] = $this->scenario(5);
@@ -155,6 +183,34 @@ final class FinancialEntryManagementTest extends TestCase
             ->get(route('financial-entries.edit', ['entry' => $entryId]))
             ->assertRedirect(route('financial-entries.show', ['entry' => $entryId]))
             ->assertSessionHas('warning');
+    }
+
+    public function test_lancamento_sincronizado_permite_baixa_e_reversao_da_baixa(): void
+    {
+        [$owner, $company, $base] = $this->scenario(11);
+        $entryId = $this->createSyncedEntry($company, $base, $owner);
+
+        $this->actingAs($owner)->post(route('financial-entries.settle', ['entry' => $entryId]), [
+            'bank_account_id' => $base['account'],
+            'paid_at' => '2026-07-21',
+            'payment_method' => 'pix',
+        ])->assertRedirect(route('financial-entries.show', ['entry' => $entryId]));
+
+        $this->actingAs($owner)
+            ->post(route('financial-entries.unsettle', ['entry' => $entryId]))
+            ->assertRedirect(route('financial-entries.show', ['entry' => $entryId]));
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryId,
+            'status' => 'forecast',
+            'paid_at' => null,
+            'bank_account_id' => $base['account'],
+        ]);
+
+        $this->assertDatabaseHas('bank_accounts', [
+            'id' => $base['account'],
+            'current_balance_cents' => 0,
+        ]);
     }
 
     public function test_cancela_lancamento_manual(): void
