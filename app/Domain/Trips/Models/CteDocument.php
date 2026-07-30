@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Trips\Models;
 
+use App\Domain\Attachments\Concerns\HasAttachments;
 use App\Domain\Fleet\Models\Driver;
 use App\Domain\Fleet\Models\Vehicle;
 use App\Domain\Partners\Models\BusinessPartner;
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
 final class CteDocument extends Model
 {
     use BelongsToCompany;
+    use HasAttachments;
     use SoftDeletes;
 
     protected $guarded = [];

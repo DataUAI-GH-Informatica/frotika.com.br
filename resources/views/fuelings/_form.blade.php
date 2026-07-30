@@ -151,6 +151,21 @@
             <span class="text-sm text-slate-600">Confirmar odômetro menor que o último conhecido (troca de painel / correção).</span>
         </label>
     </section>
+
+    <section>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900">Anexos</h2>
+        <input type="file" name="attachments[]" multiple
+            accept="{{ collect(\App\Domain\Attachments\Support\AttachmentRules::allowedExtensions())->map(fn ($ext) => '.' . $ext)->join(',') }}"
+            class="block w-full text-base text-slate-600 file:mr-3 file:h-9 file:cursor-pointer file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-50 sm:text-sm" />
+        <p class="mt-2 text-xs text-slate-500">
+            Cupom do posto, nota fiscal ou foto do painel.
+            {{ \App\Domain\Attachments\Support\AttachmentRules::humanExtensions() }} · até
+            {{ \App\Domain\Attachments\Support\AttachmentRules::humanMaxSize() }} por arquivo. Dá para anexar depois, na tela do abastecimento.
+        </p>
+        @foreach (collect($errors->getMessages())->filter(fn ($m, $key) => str_starts_with($key, 'attachments'))->flatten()->unique() as $message)
+            <p class="mt-1 text-sm text-danger-700">{{ $message }}</p>
+        @endforeach
+    </section>
 </div>
 
 <script>

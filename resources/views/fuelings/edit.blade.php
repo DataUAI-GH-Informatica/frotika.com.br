@@ -11,7 +11,8 @@
         </x-ui.page-header>
 
         <x-ui.card class="border-slate-200 bg-white">
-            <form method="POST" action="{{ route('fuelings.update', ['fueling' => $fueling->getKey()]) }}">
+            <form method="POST" action="{{ route('fuelings.update', ['fueling' => $fueling->getKey()]) }}"
+                enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 @include('fuelings._form', ['fueling' => $fueling])

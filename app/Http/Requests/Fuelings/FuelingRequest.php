@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Fuelings;
 
+use App\Domain\Attachments\Support\AttachmentRules;
 use App\Domain\Fuelings\Enums\FuelingPaymentMethod;
 use App\Domain\Fuelings\Enums\FuelProduct;
 use App\Domain\Fuelings\Enums\FuelTank;
@@ -37,6 +38,8 @@ abstract class FuelingRequest extends FormRequest
             'invoice_number' => ['nullable', 'string', 'max:60'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'allow_odometer_rollback' => ['boolean'],
+            'attachments' => array_merge(['nullable'], AttachmentRules::collectionRules()),
+            'attachments.*' => AttachmentRules::fileRules(),
         ];
     }
 
@@ -52,6 +55,9 @@ abstract class FuelingRequest extends FormRequest
             'payment_method.in' => 'Forma de pagamento inválida.',
             'liters.gt' => 'Informe uma quantidade de litros maior que zero.',
             'total_cents.min' => 'Informe o valor total do abastecimento.',
+            'attachments.max' => 'Envie no máximo '.AttachmentRules::maxFiles().' arquivos por vez.',
+            'attachments.*.mimes' => 'O Frotika aceita '.AttachmentRules::humanExtensions().'.',
+            'attachments.*.max' => 'Cada arquivo pode ter até '.AttachmentRules::humanMaxSize().'.',
         ];
     }
 

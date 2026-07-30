@@ -15,7 +15,7 @@ final class ShowCteController
     public function __invoke(Request $request, int $cte): View
     {
         $document = CteDocument::query()
-            ->with(['vehicle', 'trailer', 'partners'])
+            ->with(['vehicle', 'trailer', 'partners', 'attachments.uploader:id,name'])
             ->findOrFail($cte);
 
         Gate::authorize('view', $document);
@@ -28,6 +28,7 @@ final class ShowCteController
         return view('cte.show', [
             'document' => $document,
             'entry' => $entry,
+            'canAttach' => Gate::allows('attach', $document),
         ]);
     }
 }

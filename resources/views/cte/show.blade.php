@@ -178,6 +178,10 @@
                     <p class="text-sm text-slate-500">Sem lançamento financeiro para este CT-e.</p>
                 @endif
             </div>
+
+            <x-ui.attachments :attachments="$document->attachments" :type="\App\Domain\Attachments\Enums\AttachableType::CteDocument"
+                :owner-id="$document->getKey()" :can-manage="$canAttach"
+                empty-hint="Guarde aqui o canhoto assinado, o comprovante de entrega ou a fatura do frete." />
         </div>
     </div>
 @endsection

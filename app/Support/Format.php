@@ -102,6 +102,28 @@ final class Format
     }
 
     /**
+     * Tamanho de arquivo em unidade binária. Abaixo de 10 MB mostra uma casa
+     * decimal — a diferença entre 1,2 MB e 9,8 MB importa para quem anexa foto
+     * de celular com internet de posto de estrada.
+     */
+    public static function fileSize(int $bytes): string
+    {
+        if ($bytes < 1024) {
+            return $bytes.' B';
+        }
+
+        $kilobytes = $bytes / 1024;
+
+        if ($kilobytes < 1024) {
+            return self::moneyDecimal($kilobytes, 0).' KB';
+        }
+
+        $megabytes = $kilobytes / 1024;
+
+        return self::moneyDecimal($megabytes, $megabytes < 10 ? 1 : 0).' MB';
+    }
+
+    /**
      * Telefone/celular/WhatsApp a partir dos dígitos gravados na base.
      * Celular (11 dígitos) vira (xx) x xxxx-xxxx; fixo (10 dígitos) vira
      * (xx) xxxx-xxxx. Outros tamanhos (dado incompleto ou legado) voltam só
@@ -172,6 +194,19 @@ final class Format
         }
 
         return Carbon::parse($value)->format('d/m/Y');
+    }
+
+    /**
+     * Dia e mês, para coluna estreita onde o ano é redundante (a data completa
+     * fica no title do elemento).
+     */
+    public static function dayMonth(DateTimeInterface|string|null $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return Carbon::parse($value)->format('d/m');
     }
 
     public static function dateTime(DateTimeInterface|string|null $value): string

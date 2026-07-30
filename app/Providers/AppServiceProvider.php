@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Attachments\Models\Attachment;
+use App\Domain\Attachments\Policies\AttachmentPolicy;
 use App\Domain\Billing\Enums\GroupLicenseInvoiceStatus;
 use App\Domain\Billing\Enums\GroupLicenseStatus;
 use App\Domain\Billing\Models\GroupLicense;
@@ -80,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(BankAccount::class, BankAccountPolicy::class);
         Gate::policy(FinancialEntry::class, FinancialEntryPolicy::class);
         Gate::policy(CteDocument::class, CteDocumentPolicy::class);
+        Gate::policy(Attachment::class, AttachmentPolicy::class);
 
         Gate::define('switch-company', static function (User $user, Company $company): bool {
             return $user->companies()->whereKey($company->getKey())->exists()

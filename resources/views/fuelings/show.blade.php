@@ -130,10 +130,16 @@
         </div>
     </div>
 
-    @if ($fueling->getAttribute('notes'))
-        <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-            <h2 class="mb-2 text-sm font-semibold text-slate-900">Observações</h2>
-            <p class="whitespace-pre-line text-sm text-slate-700">{{ $fueling->getAttribute('notes') }}</p>
-        </div>
-    @endif
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+        <x-ui.attachments :attachments="$fueling->attachments" :type="\App\Domain\Attachments\Enums\AttachableType::Fueling"
+            :owner-id="$fueling->getKey()" :can-manage="$canManage"
+            empty-hint="Guarde aqui o cupom do posto, a nota fiscal ou a foto do painel." />
+
+        @if ($fueling->getAttribute('notes'))
+            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                <h2 class="mb-2 text-sm font-semibold text-slate-900">Observações</h2>
+                <p class="whitespace-pre-line text-sm text-slate-700">{{ $fueling->getAttribute('notes') }}</p>
+            </div>
+        @endif
+    </div>
 @endsection

@@ -11,7 +11,7 @@
         </x-ui.page-header>
 
         <x-ui.card class="border-slate-200 bg-white">
-            <form method="POST" action="{{ route('fuelings.store') }}">
+            <form method="POST" action="{{ route('fuelings.store') }}" enctype="multipart/form-data">
                 @csrf
                 @include('fuelings._form', ['fueling' => null])
 

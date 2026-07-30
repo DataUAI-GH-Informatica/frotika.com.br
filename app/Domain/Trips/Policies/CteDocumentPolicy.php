@@ -30,6 +30,11 @@ final class CteDocumentPolicy
         return $this->belongsToCurrentCompany($user, $cte);
     }
 
+    public function attach(User $user, CteDocument $cte): bool
+    {
+        return $this->belongsToCurrentCompany($user, $cte);
+    }
+
     private function belongsToCurrentCompany(User $user, CteDocument $cte): bool
     {
         return (int) $cte->getAttribute('company_id') === (int) $user->current_company_id

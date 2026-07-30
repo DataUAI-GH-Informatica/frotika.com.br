@@ -43,6 +43,11 @@ final class FuelingPolicy
         return $this->update($user, $fueling);
     }
 
+    public function attach(User $user, Fueling $fueling): bool
+    {
+        return $this->update($user, $fueling);
+    }
+
     private function sharesGroup(User $user, Fueling $fueling): bool
     {
         $groupId = $this->groupIdOf($fueling);

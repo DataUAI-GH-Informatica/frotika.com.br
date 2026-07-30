@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Attachments\DeleteAttachmentController;
+use App\Http\Controllers\Attachments\DownloadAttachmentController;
+use App\Http\Controllers\Attachments\StoreAttachmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -303,6 +306,18 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/ct-e/{cte}', ShowCteController::class)
             ->whereNumber('cte')
             ->name('cte.show');
+
+        // Anexos são polimórficos: o primeiro segmento diz de quem é o arquivo
+        // (App\Domain\Attachments\Enums\AttachableType::slug).
+        Route::post('/anexos/{owner}/{id}', StoreAttachmentController::class)
+            ->whereNumber('id')
+            ->name('attachments.store');
+        Route::get('/anexos/{attachment}', DownloadAttachmentController::class)
+            ->whereNumber('attachment')
+            ->name('attachments.download');
+        Route::delete('/anexos/{attachment}', DeleteAttachmentController::class)
+            ->whereNumber('attachment')
+            ->name('attachments.destroy');
     });
 
     Route::middleware(['verified', EnsurePlatformAdmin::class])

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Fuelings\Models;
 
+use App\Domain\Attachments\Concerns\HasAttachments;
 use App\Domain\Fleet\Models\Driver;
 use App\Domain\Fleet\Models\Vehicle;
 use App\Domain\Fuelings\Enums\FuelingPaymentMethod;
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
 final class Fueling extends Model
 {
     use BelongsToCompany;
+    use HasAttachments;
     use SoftDeletes;
 
     protected $guarded = [];

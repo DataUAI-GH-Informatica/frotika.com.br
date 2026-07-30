@@ -621,7 +621,9 @@ Cada empresa nasce com uma **cópia** dessas categorias (`company_id` preenchido
 
 **`activity_log`** — do `spatie/laravel-activitylog`, com `group_id` e `company_id` adicionados nas properties.
 
-**`attachments`** — `company_id`, `attachable_type`, `attachable_id`, `disk`, `path`, `original_name`, `mime`, `size_bytes`, `uploaded_by`.
+**`attachments`** — `company_id`, `attachable_type`, `attachable_id`, `disk`, `path`, `original_name`, `mime`, `size_bytes`, `uploaded_by`. Índice `(company_id, attachable_type, attachable_id)`.
+
+> Tabela única para todo anexo do sistema (ADR-010). `attachable_type` guarda o FQCN, como `financial_entries.sourceable_type`. O que aceita anexo está em `App\Domain\Attachments\Enums\AttachableType`; hoje `Fueling` e `CteDocument`. Disco privado, caminho `grupos/{group_uuid}/anexos/{tipo}/{id}/{uuid}.{ext}`, download só por rota autenticada. Exclusão apaga registro e arquivo — sem soft delete. A permissão é delegada à policy do dono pela habilidade `attach`. O XML do CT-e não entra aqui: é fonte fiscal, tem rota própria.
 
 **`notifications`** — tabela padrão do Laravel.
 
@@ -1596,7 +1598,7 @@ Cada fase é entregável e testável. Não iniciar a próxima com a anterior ver
 - [ ] Recorrências + job de geração
 - [ ] Tela de fluxo de caixa com toggle de previstos
 - [ ] `frotika:recalculate-balances` + agendamento
-- [ ] Anexos
+- [x] Anexos — tabela polimórfica `attachments` (ADR-010); ligada a abastecimento e CT-e
 
 ### Fase 6 — DRE Veicular ★
 

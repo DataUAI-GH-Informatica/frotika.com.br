@@ -14,7 +14,12 @@ final class ShowFuelingController
     public function __invoke(int $fueling): View
     {
         $model = Fueling::query()
-            ->with(['vehicle:id,plate,type', 'driver:id,name', 'station:id,legal_name,trade_name'])
+            ->with([
+                'vehicle:id,plate,type',
+                'driver:id,name',
+                'station:id,legal_name,trade_name',
+                'attachments.uploader:id,name',
+            ])
             ->findOrFail($fueling);
 
         Gate::authorize('view', $model);
