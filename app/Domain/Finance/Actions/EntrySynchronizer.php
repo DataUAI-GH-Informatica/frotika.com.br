@@ -97,12 +97,17 @@ final class EntrySynchronizer
                 'description' => $this->description($cte),
                 'document_number' => (string) $cte->getAttribute('number'),
                 'competence_date' => $cte->issued_at->toDateString(),
+                'reference_date' => $cte->issued_at->toDateString(),
                 'due_date' => $cte->issued_at->copy()->addDays($this->receivableDays())->toDateString(),
                 'paid_at' => null,
                 'amount_cents' => $amountCents,
+                'settlement_discount_cents' => 0,
+                'settlement_interest_cents' => 0,
                 'status' => FinancialEntryStatus::Forecast->value,
                 'payment_method' => null,
                 'recurrence_id' => null,
+                'installment_number' => null,
+                'installment_total' => null,
             ];
 
             if ($existing instanceof FinancialEntry) {
@@ -114,6 +119,8 @@ final class EntrySynchronizer
                         $attributes['paid_at'],
                         $attributes['bank_account_id'],
                         $attributes['payment_method'],
+                        $attributes['settlement_discount_cents'],
+                        $attributes['settlement_interest_cents'],
                     );
                 }
 
@@ -204,12 +211,17 @@ final class EntrySynchronizer
                 'description' => $this->fuelingDescription($fueling),
                 'document_number' => $fueling->getAttribute('invoice_number'),
                 'competence_date' => $fueledAt->toDateString(),
+                'reference_date' => $fueledAt->toDateString(),
                 'due_date' => $fueledAt->toDateString(),
                 'paid_at' => $isSettled ? $fueledAt->toDateString() : null,
                 'amount_cents' => $amountCents,
+                'settlement_discount_cents' => 0,
+                'settlement_interest_cents' => 0,
                 'status' => $isSettled ? FinancialEntryStatus::Settled->value : FinancialEntryStatus::Forecast->value,
                 'payment_method' => $isSettled ? $paymentMethod->toFinancialEntryPaymentMethod()->value : null,
                 'recurrence_id' => null,
+                'installment_number' => null,
+                'installment_total' => null,
             ];
 
             if ($existing instanceof FinancialEntry) {
@@ -221,6 +233,8 @@ final class EntrySynchronizer
                         $attributes['paid_at'],
                         $attributes['bank_account_id'],
                         $attributes['payment_method'],
+                        $attributes['settlement_discount_cents'],
+                        $attributes['settlement_interest_cents'],
                     );
                 }
 
@@ -302,12 +316,17 @@ final class EntrySynchronizer
                 'description' => $this->maintenanceDescription($maintenance),
                 'document_number' => $maintenance->getAttribute('invoice_number'),
                 'competence_date' => $competence,
+                'reference_date' => $competence,
                 'due_date' => $competence,
                 'paid_at' => null,
                 'amount_cents' => $amountCents,
+                'settlement_discount_cents' => 0,
+                'settlement_interest_cents' => 0,
                 'status' => FinancialEntryStatus::Forecast->value,
                 'payment_method' => null,
                 'recurrence_id' => null,
+                'installment_number' => null,
+                'installment_total' => null,
             ];
 
             if ($existing instanceof FinancialEntry) {
@@ -319,6 +338,8 @@ final class EntrySynchronizer
                         $attributes['paid_at'],
                         $attributes['bank_account_id'],
                         $attributes['payment_method'],
+                        $attributes['settlement_discount_cents'],
+                        $attributes['settlement_interest_cents'],
                     );
                 }
 

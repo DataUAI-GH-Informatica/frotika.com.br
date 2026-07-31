@@ -34,6 +34,7 @@ class FinancialEntry extends Model
             'status' => FinancialEntryStatus::class,
             'payment_method' => FinancialEntryPaymentMethod::class,
             'competence_date' => 'date',
+            'reference_date' => 'date',
             'due_date' => 'date',
             'paid_at' => 'date',
             'reconciled_at' => 'datetime',
@@ -78,5 +79,13 @@ class FinancialEntry extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsTo<Recurrence, $this>
+     */
+    public function recurrence(): BelongsTo
+    {
+        return $this->belongsTo(Recurrence::class, 'recurrence_id');
     }
 }

@@ -20,12 +20,19 @@ final class UpdateFinancialEntryController
 
         $data = $request->validated();
         $data['type'] = $this->resolveType((int) $data['financial_category_id']);
+        $scope = (string) ($data['apply_scope'] ?? 'single');
 
-        $action->execute($company, (int) $model->getKey(), $data);
+        $action->execute($company, (int) $model->getKey(), $data, $scope);
+
+        $message = match ($scope) {
+            'forward' => 'Lançamento e série futura atualizados com sucesso.',
+            'all' => 'Toda a série foi atualizada com sucesso.',
+            default => 'Lançamento atualizado com sucesso.',
+        };
 
         return redirect()
             ->route('financial-entries.show', ['entry' => $model->getKey()])
-            ->with('status', 'Lançamento atualizado com sucesso.');
+            ->with('status', $message);
     }
 
     private function resolveType(int $categoryId): string

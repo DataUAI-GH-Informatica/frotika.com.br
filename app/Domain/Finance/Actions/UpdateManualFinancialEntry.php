@@ -11,6 +11,8 @@ use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Finance\Models\Recurrence;
 use App\Domain\Tenancy\Models\Company;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -28,6 +30,7 @@ final class UpdateManualFinancialEntry
      *     type: string,
      *     description: string,
      *     competence_date: string,
+     *     reference_date?: string|null,
      *     due_date?: string|null,
      *     paid_at?: string|null,
      *     amount_cents: int,
@@ -41,7 +44,7 @@ final class UpdateManualFinancialEntry
      *     attachment_path?: string|null
      * }  $data
      */
-    public function execute(Company $company, int $entryId, array $data): void
+    public function execute(Company $company, int $entryId, array $data, string $applyScope = 'single'): void
     {
         $validated = Validator::make($data, [
             'financial_category_id' => ['required', 'integer', 'min:1'],
@@ -50,6 +53,7 @@ final class UpdateManualFinancialEntry
             'description' => ['required', 'string', 'max:200'],
             'document_number' => ['nullable', 'string', 'max:50'],
             'competence_date' => ['required', 'date'],
+            'reference_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'paid_at' => ['nullable', 'date'],
             'amount_cents' => ['required', 'integer', 'min:1'],
@@ -62,7 +66,7 @@ final class UpdateManualFinancialEntry
             'attachment_path' => ['nullable', 'string', 'max:255'],
         ])->validate();
 
-        $this->tenant->runFor($company, function () use ($validated, $entryId, $company): void {
+        $this->tenant->runFor($company, function () use ($validated, $entryId, $company, $applyScope): void {
             $entry = FinancialEntry::query()->find($entryId);
 
             if ($entry === null) {
@@ -77,10 +81,17 @@ final class UpdateManualFinancialEntry
                 ]);
             }
 
+            $scope = $this->resolveScope($applyScope);
             $pairEntry = null;
             $isTransferEntry = $entry->transfer_pair_id !== null;
 
             if ($isTransferEntry) {
+                if ($scope !== 'single') {
+                    throw ValidationException::withMessages([
+                        'apply_scope' => 'Transferencias permitem apenas edicao individual.',
+                    ]);
+                }
+
                 $pairEntry = FinancialEntry::query()->find((int) $entry->transfer_pair_id);
 
                 if ($pairEntry === null) {
@@ -101,9 +112,6 @@ final class UpdateManualFinancialEntry
                     ]);
                 }
             }
-
-            $previousBankAccountId = $entry->bank_account_id !== null ? (int) $entry->bank_account_id : null;
-            $previousPairBankAccountId = $pairEntry?->bank_account_id !== null ? (int) $pairEntry->bank_account_id : null;
 
             $category = FinancialCategory::query()->find($validated['financial_category_id']);
 
@@ -143,6 +151,12 @@ final class UpdateManualFinancialEntry
             if ($isTransferEntry && $validated['status'] !== 'settled') {
                 throw ValidationException::withMessages([
                     'status' => 'Transferencias entre contas devem permanecer liquidadas.',
+                ]);
+            }
+
+            if ($scope !== 'single' && $entry->recurrence_id === null) {
+                throw ValidationException::withMessages([
+                    'apply_scope' => 'Edicao em lote exige lancamento vinculado a recorrencia/parcelamento.',
                 ]);
             }
 
@@ -202,51 +216,148 @@ final class UpdateManualFinancialEntry
                 ]);
             }
 
-            $entry->forceFill([
-                'bank_account_id' => $validated['bank_account_id'] ?? null,
-                'financial_category_id' => $validated['financial_category_id'],
-                'vehicle_id' => $validated['vehicle_id'] ?? null,
-                'driver_id' => $validated['driver_id'] ?? null,
-                'trip_id' => $validated['trip_id'] ?? null,
-                'type' => $validated['type'],
-                'description' => $validated['description'],
-                'document_number' => $validated['document_number'] ?? null,
-                'competence_date' => $validated['competence_date'],
-                'due_date' => $validated['due_date'] ?? null,
-                'paid_at' => $validated['paid_at'] ?? null,
-                'amount_cents' => $validated['amount_cents'],
-                'status' => $validated['status'],
-                'payment_method' => $validated['payment_method'] ?? null,
-                'recurrence_id' => $validated['recurrence_id'] ?? null,
-                'attachment_path' => $validated['attachment_path'] ?? null,
-                'reconciled_at' => null,
-            ])->save();
+            DB::transaction(function () use ($entry, $scope, $validated, $isTransferEntry, $pairEntry, $company): void {
+                $targets = $this->resolveTargets($entry, $scope);
+                $affectedBankAccountIds = [];
 
-            if ($isTransferEntry) {
-                $pairEntry->forceFill([
-                    'financial_category_id' => $validated['financial_category_id'],
-                    'description' => $validated['description'],
-                    'document_number' => $validated['document_number'] ?? null,
-                    'competence_date' => $validated['competence_date'],
-                    'due_date' => $validated['due_date'] ?? null,
-                    'paid_at' => $validated['paid_at'] ?? null,
-                    'amount_cents' => $validated['amount_cents'],
-                    'status' => $validated['status'],
-                    'payment_method' => $validated['payment_method'] ?? null,
-                    'reconciled_at' => null,
-                ])->save();
-            }
+                foreach ($targets as $target) {
+                    $affectedBankAccountIds[] = $target->bank_account_id !== null ? (int) $target->bank_account_id : null;
 
-            $affectedBankAccountIds = array_values(array_unique(array_filter([
-                $previousBankAccountId,
-                $entry->bank_account_id !== null ? (int) $entry->bank_account_id : null,
-                $previousPairBankAccountId,
-                $pairEntry?->bank_account_id !== null ? (int) $pairEntry->bank_account_id : null,
-            ], static fn ($bankAccountId): bool => $bankAccountId !== null)));
+                    $target->forceFill([
+                        'bank_account_id' => $validated['bank_account_id'] ?? null,
+                        'financial_category_id' => $validated['financial_category_id'],
+                        'vehicle_id' => $validated['vehicle_id'] ?? null,
+                        'driver_id' => $validated['driver_id'] ?? null,
+                        'trip_id' => $validated['trip_id'] ?? null,
+                        'type' => $validated['type'],
+                        'description' => $validated['description'],
+                        'document_number' => $validated['document_number'] ?? null,
+                        'competence_date' => $validated['competence_date'],
+                        'reference_date' => $validated['reference_date'] ?? $target->reference_date?->toDateString() ?? $validated['competence_date'],
+                        'due_date' => $validated['due_date'] ?? null,
+                        'paid_at' => $validated['paid_at'] ?? null,
+                        'amount_cents' => $validated['amount_cents'],
+                        'settlement_discount_cents' => $validated['status'] === 'forecast' ? 0 : (int) $target->settlement_discount_cents,
+                        'settlement_interest_cents' => $validated['status'] === 'forecast' ? 0 : (int) $target->settlement_interest_cents,
+                        'status' => $validated['status'],
+                        'payment_method' => $validated['payment_method'] ?? null,
+                        'recurrence_id' => $validated['recurrence_id'] ?? $target->recurrence_id,
+                        'attachment_path' => $validated['attachment_path'] ?? null,
+                        'reconciled_at' => null,
+                    ])->save();
 
-            foreach ($affectedBankAccountIds as $bankAccountId) {
-                $this->recalculateBankAccountCurrentBalance->execute($company, $bankAccountId);
-            }
+                    $affectedBankAccountIds[] = $target->bank_account_id !== null ? (int) $target->bank_account_id : null;
+                }
+
+                if ($isTransferEntry) {
+                    $pairEntry->forceFill([
+                        'financial_category_id' => $validated['financial_category_id'],
+                        'description' => $validated['description'],
+                        'document_number' => $validated['document_number'] ?? null,
+                        'competence_date' => $validated['competence_date'],
+                        'reference_date' => $validated['reference_date'] ?? $validated['competence_date'],
+                        'due_date' => $validated['due_date'] ?? null,
+                        'paid_at' => $validated['paid_at'] ?? null,
+                        'amount_cents' => $validated['amount_cents'],
+                        'status' => $validated['status'],
+                        'payment_method' => $validated['payment_method'] ?? null,
+                        'reconciled_at' => null,
+                    ])->save();
+
+                    $affectedBankAccountIds[] = $pairEntry->bank_account_id !== null ? (int) $pairEntry->bank_account_id : null;
+                }
+
+                $this->syncRecurrenceTemplate($entry, $validated, $scope);
+
+                $resolvedBankAccountIds = array_values(array_unique(array_filter(
+                    $affectedBankAccountIds,
+                    static fn ($bankAccountId): bool => $bankAccountId !== null
+                )));
+
+                foreach ($resolvedBankAccountIds as $bankAccountId) {
+                    $this->recalculateBankAccountCurrentBalance->execute($company, $bankAccountId);
+                }
+            });
         });
+    }
+
+    private function resolveScope(string $scope): string
+    {
+        if (! in_array($scope, ['single', 'forward', 'all'], true)) {
+            throw ValidationException::withMessages([
+                'apply_scope' => 'Escopo de edicao invalido.',
+            ]);
+        }
+
+        return $scope;
+    }
+
+    /**
+     * @return Collection<int, FinancialEntry>
+     */
+    private function resolveTargets(FinancialEntry $entry, string $scope): Collection
+    {
+        if ($scope === 'single') {
+            return new Collection([$entry]);
+        }
+
+        $query = FinancialEntry::query()
+            ->where('recurrence_id', (int) $entry->recurrence_id)
+            ->where('status', '<>', 'canceled')
+            ->orderBy('reference_date')
+            ->orderBy('id');
+
+        if ($scope === 'forward') {
+            $referenceDate = $entry->reference_date?->toDateString() ?? $entry->competence_date->toDateString();
+            $query->whereDate('reference_date', '>=', $referenceDate);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * @param array{
+     *     financial_category_id: int,
+     *     bank_account_id?: int|null,
+     *     type: string,
+     *     description: string,
+     *     competence_date: string,
+     *     reference_date?: string|null,
+     *     due_date?: string|null,
+     *     paid_at?: string|null,
+     *     amount_cents: int,
+     *     status: string,
+     *     payment_method?: string|null,
+     *     document_number?: string|null,
+     *     vehicle_id?: int|null,
+     *     driver_id?: int|null,
+     *     trip_id?: int|null,
+     *     recurrence_id?: int|null,
+     *     attachment_path?: string|null
+     * } $validated
+     */
+    private function syncRecurrenceTemplate(FinancialEntry $entry, array $validated, string $scope): void
+    {
+        if ($scope === 'single' || $entry->recurrence_id === null) {
+            return;
+        }
+
+        $recurrence = Recurrence::query()->find((int) $entry->recurrence_id);
+
+        if (! $recurrence instanceof Recurrence) {
+            return;
+        }
+
+        $recurrence->forceFill([
+            'financial_category_id' => $validated['financial_category_id'],
+            'type' => $validated['type'],
+            'description' => $validated['description'],
+            'document_number' => $validated['document_number'] ?? null,
+            'amount_cents' => $validated['amount_cents'],
+            'vehicle_id' => $validated['vehicle_id'] ?? null,
+            'driver_id' => $validated['driver_id'] ?? null,
+            'trip_id' => $validated['trip_id'] ?? null,
+            'payment_method' => $validated['payment_method'] ?? null,
+        ])->save();
     }
 }

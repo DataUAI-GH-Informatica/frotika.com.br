@@ -6,6 +6,7 @@ namespace App\Domain\Finance\Actions;
 
 use App\Domain\Finance\Enums\FinancialEntryStatus;
 use App\Domain\Finance\Enums\RecurrenceFrequency;
+use App\Domain\Finance\Enums\RecurrenceKind;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\FinancialEntry;
 use App\Domain\Finance\Models\Recurrence;
@@ -86,9 +87,14 @@ final class GenerateForecastEntriesFromRecurrences
 
                     $occurrencesEvaluated++;
 
+                    $referenceDate = $occurrenceDate->toDateString();
+                    $competenceDate = $recurrence->kind === RecurrenceKind::Installment
+                        ? ($recurrence->fixed_competence_date?->toDateString() ?? $referenceDate)
+                        : $referenceDate;
+
                     $alreadyExists = FinancialEntry::query()
                         ->where('recurrence_id', $recurrence->getKey())
-                        ->whereDate('competence_date', $occurrenceDate->toDateString())
+                        ->whereDate('reference_date', $referenceDate)
                         ->exists();
 
                     if ($alreadyExists) {
@@ -96,6 +102,8 @@ final class GenerateForecastEntriesFromRecurrences
                     }
 
                     if (! $dryRun) {
+                        $nextInstallmentNumber = $generatedCount + 1;
+
                         FinancialEntry::query()->create([
                             'company_id' => $recurrence->company_id,
                             'bank_account_id' => null,
@@ -106,16 +114,21 @@ final class GenerateForecastEntriesFromRecurrences
                             'type' => $recurrence->type->value,
                             'description' => (string) $recurrence->description,
                             'document_number' => $recurrence->document_number,
-                            'competence_date' => $occurrenceDate->toDateString(),
-                            'due_date' => $occurrenceDate->toDateString(),
+                            'competence_date' => $competenceDate,
+                            'reference_date' => $referenceDate,
+                            'due_date' => $referenceDate,
                             'paid_at' => null,
                             'amount_cents' => (int) $recurrence->amount_cents,
+                            'settlement_discount_cents' => 0,
+                            'settlement_interest_cents' => 0,
                             'status' => FinancialEntryStatus::Forecast->value,
                             'payment_method' => $recurrence->payment_method?->value,
                             'sourceable_type' => null,
                             'sourceable_id' => null,
                             'transfer_pair_id' => null,
                             'recurrence_id' => $recurrence->getKey(),
+                            'installment_number' => $recurrence->installments !== null ? $nextInstallmentNumber : null,
+                            'installment_total' => $recurrence->installments,
                             'attachment_path' => null,
                             'reconciled_at' => null,
                             'created_by' => $recurrence->created_by,

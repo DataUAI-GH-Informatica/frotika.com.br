@@ -17,14 +17,21 @@ final class SettleFinancialEntryController
         $model = FinancialEntry::query()->findOrFail($entry);
         $company = Company::query()->findOrFail($model->getAttribute('company_id'));
 
-        $action->execute($company, (int) $model->getKey(), [
+        $result = $action->execute($company, (int) $model->getKey(), [
             'bank_account_id' => (int) $request->validated('bank_account_id'),
             'paid_at' => (string) $request->validated('paid_at'),
             'payment_method' => $request->validated('payment_method'),
+            'paid_amount_cents' => $request->validated('paid_amount_cents'),
+            'discount_cents' => $request->validated('discount_cents'),
+            'interest_cents' => $request->validated('interest_cents'),
         ]);
+
+        $message = $result['is_partial']
+            ? 'Baixa parcial registrada. O saldo pendente foi mantido como previsto.'
+            : 'Baixa registrada com sucesso.';
 
         return redirect()
             ->route('financial-entries.show', ['entry' => $model->getKey()])
-            ->with('status', 'Baixa registrada com sucesso.');
+            ->with('status', $message);
     }
 }

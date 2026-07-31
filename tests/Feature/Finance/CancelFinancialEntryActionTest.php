@@ -9,6 +9,7 @@ use App\Domain\Finance\Enums\FinancialEntryStatus;
 use App\Domain\Finance\Models\BankAccount;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\FinancialEntry;
+use App\Domain\Finance\Models\Recurrence;
 use App\Domain\Tenancy\Models\Company;
 use App\Domain\Tenancy\Models\Group;
 use App\Models\User;
@@ -123,6 +124,43 @@ final class CancelFinancialEntryActionTest extends TestCase
             'id' => $destinationBankAccountId,
             'company_id' => $company->getKey(),
             'current_balance_cents' => 2000,
+        ]);
+    }
+
+    public function test_cancela_apenas_dali_em_diante_em_serie_recorrente(): void
+    {
+        $company = $this->createCompany(760);
+        [$entries, $recurrenceId] = $this->createRecurringSeries($company);
+
+        $action = app(CancelFinancialEntry::class);
+        $action->execute($company, $entries[1], 'forward');
+
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[0], 'status' => 'forecast']);
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[1], 'status' => 'canceled']);
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[2], 'status' => 'canceled']);
+
+        $this->assertDatabaseHas('recurrences', [
+            'id' => $recurrenceId,
+            'active' => true,
+            'ends_at' => '2026-08-09 00:00:00',
+        ]);
+    }
+
+    public function test_cancela_toda_serie_e_desativa_recorrencia(): void
+    {
+        $company = $this->createCompany(761);
+        [$entries, $recurrenceId] = $this->createRecurringSeries($company);
+
+        $action = app(CancelFinancialEntry::class);
+        $action->execute($company, $entries[0], 'all');
+
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[0], 'status' => 'canceled']);
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[1], 'status' => 'canceled']);
+        $this->assertDatabaseHas('financial_entries', ['id' => $entries[2], 'status' => 'canceled']);
+
+        $this->assertDatabaseHas('recurrences', [
+            'id' => $recurrenceId,
+            'active' => false,
         ]);
     }
 
@@ -251,6 +289,69 @@ final class CancelFinancialEntryActionTest extends TestCase
                 $expenseEntry->getKey(),
                 $revenueEntry->getKey(),
             ];
+        });
+    }
+
+    /**
+     * @return array{0: array<int, int>, 1: int}
+     */
+    private function createRecurringSeries(Company $company): array
+    {
+        $tenant = app(TenantContext::class);
+
+        return $tenant->runFor($company, function (): array {
+            $category = FinancialCategory::query()->create([
+                'code' => '9.9',
+                'name' => 'Serie recorrente cancelamento',
+                'type' => 'expense',
+                'dre_group' => 'fixed_cost',
+                'allocation' => 'non_vehicle',
+                'affects_cashflow' => true,
+                'is_system' => false,
+                'active' => true,
+                'sort_order' => 990,
+            ]);
+
+            $author = User::factory()->create();
+
+            $recurrence = Recurrence::query()->create([
+                'financial_category_id' => $category->getKey(),
+                'type' => 'expense',
+                'description' => 'Serie recorrente',
+                'amount_cents' => 10000,
+                'frequency' => 'monthly',
+                'kind' => 'recurring',
+                'day_of_month' => 10,
+                'starts_at' => '2026-07-10',
+                'installments_generated' => 0,
+                'active' => true,
+                'created_by' => $author->getKey(),
+            ]);
+
+            $entryIds = [];
+
+            foreach (['2026-07-10', '2026-08-10', '2026-09-10'] as $index => $referenceDate) {
+                $entry = FinancialEntry::query()->create([
+                    'financial_category_id' => $category->getKey(),
+                    'type' => 'expense',
+                    'description' => 'Parcela '.($index + 1),
+                    'competence_date' => $referenceDate,
+                    'reference_date' => $referenceDate,
+                    'due_date' => $referenceDate,
+                    'amount_cents' => 10000,
+                    'settlement_discount_cents' => 0,
+                    'settlement_interest_cents' => 0,
+                    'status' => 'forecast',
+                    'recurrence_id' => $recurrence->getKey(),
+                    'installment_number' => $index + 1,
+                    'installment_total' => 3,
+                    'created_by' => $author->getKey(),
+                ]);
+
+                $entryIds[] = (int) $entry->getKey();
+            }
+
+            return [$entryIds, (int) $recurrence->getKey()];
         });
     }
 

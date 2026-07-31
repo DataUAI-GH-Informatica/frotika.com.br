@@ -15,6 +15,11 @@
     };
     $amountCents = (int) $entry->getAttribute('amount_cents');
     $signedCents = $type === FinancialEntryType::Expense ? -$amountCents : $amountCents;
+    $referenceDate = $entry->getAttribute('reference_date');
+    $installmentNumber = $entry->getAttribute('installment_number');
+    $installmentTotal = $entry->getAttribute('installment_total');
+    $settlementDiscountCents = (int) $entry->getAttribute('settlement_discount_cents');
+    $settlementInterestCents = (int) $entry->getAttribute('settlement_interest_cents');
 @endphp
 
 @section('content')
@@ -45,6 +50,9 @@
                         <span
                             class="inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold {{ $statusChip }}">{{ $status->label() }}</span>
                         <span class="text-xs uppercase tracking-wide text-slate-400">{{ $type->label() }}</span>
+                        @if ($installmentNumber !== null && $installmentTotal !== null)
+                            <span class="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-2xs font-semibold text-brand-700">Parcela {{ $installmentNumber }}/{{ $installmentTotal }}</span>
+                        @endif
                         @if ($isSynced)
                             <span
                                 class="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-2xs font-semibold text-slate-500">Sincronizado</span>
@@ -76,6 +84,10 @@
                         {{ Format::date($entry->getAttribute('competence_date')) }}</dd>
                 </div>
                 <div class="flex justify-between sm:block">
+                    <dt class="text-slate-500">Data de referência</dt>
+                    <dd class="font-mono tabular text-slate-900">{{ Format::date($referenceDate) ?: '—' }}</dd>
+                </div>
+                <div class="flex justify-between sm:block">
                     <dt class="text-slate-500">Vencimento</dt>
                     <dd class="font-mono tabular text-slate-900">
                         {{ Format::date($entry->getAttribute('due_date')) ?: '—' }}</dd>
@@ -103,6 +115,18 @@
                         <dd class="text-slate-900">{{ $entry->getAttribute('payment_method')->label() }}</dd>
                     </div>
                 @endif
+                @if ($settlementDiscountCents > 0)
+                    <div class="flex justify-between sm:block">
+                        <dt class="text-slate-500">Desconto aplicado</dt>
+                        <dd class="font-mono tabular text-slate-900">{{ Format::money($settlementDiscountCents) }}</dd>
+                    </div>
+                @endif
+                @if ($settlementInterestCents > 0)
+                    <div class="flex justify-between sm:block">
+                        <dt class="text-slate-500">Juros aplicados</dt>
+                        <dd class="font-mono tabular text-slate-900">{{ Format::money($settlementInterestCents) }}</dd>
+                    </div>
+                @endif
             </dl>
         </x-ui.card>
 
@@ -122,7 +146,10 @@
                                 {{ $account->getAttribute('name') }}</option>
                         @endforeach
                     </x-ui.select>
+                    <x-ui.input label="Valor pago (R$)" name="paid_amount" :value="old('paid_amount', Format::moneyDecimal($amountCents / 100))" />
                     <x-ui.input label="Data do pagamento" name="paid_at" type="date" :value="old('paid_at', now()->toDateString())" required />
+                    <x-ui.input label="Desconto (R$)" name="discount_amount" :value="old('discount_amount')" />
+                    <x-ui.input label="Juros (R$)" name="interest_amount" :value="old('interest_amount')" />
                     <div class="flex items-end">
                         <x-ui.button type="submit" class="w-full">Confirmar baixa</x-ui.button>
                     </div>
@@ -145,12 +172,35 @@
         @endif
 
         @if ($canManage && !$isSynced && $status !== FinancialEntryStatus::Canceled)
-            <form method="POST" action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
-                class="mt-4" onsubmit="return confirm('Cancelar este lançamento?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar lançamento</button>
-            </form>
+            <div class="mt-4 space-y-2">
+                <form method="POST" action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
+                    onsubmit="return confirm('Cancelar somente este lançamento?');">
+                    @csrf
+                    @method('DELETE')
+                    <input type="hidden" name="scope" value="single" />
+                    <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar somente este lançamento</button>
+                </form>
+
+                @if ($entry->getAttribute('recurrence_id') !== null)
+                    <form method="POST" action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
+                        onsubmit="return confirm('Cancelar este lançamento e os próximos da série?');">
+                        @csrf
+                        @method('DELETE')
+                        <input type="hidden" name="scope" value="forward" />
+                        <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar deste mês em diante</button>
+                    </form>
+
+                    @if ($installmentTotal !== null)
+                        <form method="POST" action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
+                            onsubmit="return confirm('Cancelar toda a série de parcelas?');">
+                            @csrf
+                            @method('DELETE')
+                            <input type="hidden" name="scope" value="all" />
+                            <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar todas as parcelas</button>
+                        </form>
+                    @endif
+                @endif
+            </div>
         @endif
     </div>
 @endsection

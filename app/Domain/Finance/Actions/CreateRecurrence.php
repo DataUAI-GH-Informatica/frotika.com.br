@@ -6,6 +6,7 @@ namespace App\Domain\Finance\Actions;
 
 use App\Domain\Finance\Enums\FinancialEntryPaymentMethod;
 use App\Domain\Finance\Enums\FinancialEntryType;
+use App\Domain\Finance\Enums\RecurrenceKind;
 use App\Domain\Finance\Models\FinancialCategory;
 use App\Domain\Finance\Models\Recurrence;
 use App\Domain\Tenancy\Models\Company;
@@ -25,11 +26,13 @@ final class CreateRecurrence
      *     description: string,
      *     amount_cents: int,
      *     frequency: string,
+     *     kind?: string,
      *     starts_at: string,
      *     day_of_month?: int|null,
      *     document_number?: string|null,
      *     ends_at?: string|null,
      *     installments?: int|null,
+     *     fixed_competence_date?: string|null,
      *     vehicle_id?: int|null,
      *     driver_id?: int|null,
      *     trip_id?: int|null,
@@ -50,17 +53,21 @@ final class CreateRecurrence
             'description' => ['required', 'string', 'max:200'],
             'amount_cents' => ['required', 'integer', 'min:1'],
             'frequency' => ['required', 'string', Rule::in(['monthly', 'weekly', 'yearly'])],
+            'kind' => ['sometimes', 'string', Rule::in([RecurrenceKind::Recurring->value, RecurrenceKind::Installment->value])],
             'starts_at' => ['required', 'date'],
             'day_of_month' => ['nullable', 'integer', 'between:1,31'],
             'document_number' => ['nullable', 'string', 'max:50'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'installments' => ['nullable', 'integer', 'min:1'],
+            'fixed_competence_date' => ['nullable', 'date'],
             'vehicle_id' => ['nullable', 'integer', 'min:1'],
             'driver_id' => ['nullable', 'integer', 'min:1'],
             'trip_id' => ['nullable', 'integer', 'min:1'],
             'payment_method' => ['nullable', 'string', Rule::in($paymentMethods)],
             'active' => ['sometimes', 'boolean'],
         ])->validate();
+
+        $kind = $validated['kind'] ?? RecurrenceKind::Recurring->value;
 
         if (in_array($validated['frequency'], ['monthly', 'yearly'], true) && ($validated['day_of_month'] ?? null) === null) {
             throw ValidationException::withMessages([
@@ -71,6 +78,18 @@ final class CreateRecurrence
         if ($validated['frequency'] === 'weekly' && ($validated['day_of_month'] ?? null) !== null) {
             throw ValidationException::withMessages([
                 'day_of_month' => 'Recorrencia semanal nao usa dia do mes.',
+            ]);
+        }
+
+        if ($kind === RecurrenceKind::Installment->value && ($validated['installments'] ?? null) === null) {
+            throw ValidationException::withMessages([
+                'installments' => 'Parcelamento exige quantidade de parcelas.',
+            ]);
+        }
+
+        if ($kind === RecurrenceKind::Installment->value && ($validated['fixed_competence_date'] ?? null) === null) {
+            throw ValidationException::withMessages([
+                'fixed_competence_date' => 'Parcelamento exige data do servico fixa.',
             ]);
         }
 
@@ -97,9 +116,11 @@ final class CreateRecurrence
                 'document_number' => $validated['document_number'] ?? null,
                 'amount_cents' => (int) $validated['amount_cents'],
                 'frequency' => $validated['frequency'],
+                'kind' => $validated['kind'] ?? RecurrenceKind::Recurring->value,
                 'day_of_month' => $validated['day_of_month'] ?? null,
                 'starts_at' => $validated['starts_at'],
                 'ends_at' => $validated['ends_at'] ?? null,
+                'fixed_competence_date' => $validated['fixed_competence_date'] ?? null,
                 'installments' => $validated['installments'] ?? null,
                 'installments_generated' => 0,
                 'vehicle_id' => $validated['vehicle_id'] ?? null,

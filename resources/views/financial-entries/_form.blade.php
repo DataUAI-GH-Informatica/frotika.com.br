@@ -1,14 +1,18 @@
 @php
     /** @var \App\Domain\Finance\Models\FinancialEntry|null $entry */
     $entry = $entry ?? null;
+    $isCreate = $entry === null;
 
     $catVal = old('financial_category_id', $entry?->getAttribute('financial_category_id'));
+    $launchModeVal = old('launch_mode', 'single');
     $statusVal = old('status', $entry?->getAttribute('status')?->value ?? 'forecast');
     $vehicleVal = old('vehicle_id', $entry?->getAttribute('vehicle_id'));
     $accountVal = old('bank_account_id', $entry?->getAttribute('bank_account_id'));
     $methodVal = old('payment_method', $entry?->getAttribute('payment_method')?->value);
     $amountVal = old('amount', $entry !== null ? Format::moneyDecimal((int) $entry->getAttribute('amount_cents') / 100) : '');
     $competenceVal = old('competence_date', $entry?->getAttribute('competence_date')?->format('Y-m-d'));
+    $referenceVal = old('reference_date', $entry?->getAttribute('reference_date')?->format('Y-m-d') ?? $entry?->getAttribute('competence_date')?->format('Y-m-d'));
+    $installmentsVal = old('installments', $entry?->getAttribute('installment_total'));
     $dueVal = old('due_date', $entry?->getAttribute('due_date')?->format('Y-m-d'));
     $paidVal = old('paid_at', $entry?->getAttribute('paid_at')?->format('Y-m-d'));
 
@@ -17,6 +21,35 @@
 @endphp
 
 <div class="grid gap-4 sm:grid-cols-2">
+    @if ($isCreate)
+        <div class="sm:col-span-2">
+            <span class="text-sm font-medium text-slate-700">Tipo de lançamento</span>
+            <div class="mt-1.5 grid gap-2 sm:grid-cols-3" role="radiogroup">
+                <label>
+                    <input type="radio" name="launch_mode" value="single" class="peer sr-only" data-launch-mode @checked($launchModeVal === 'single') />
+                    <span class="flex h-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:font-medium peer-checked:text-brand-700">Avulso</span>
+                </label>
+                <label>
+                    <input type="radio" name="launch_mode" value="monthly" class="peer sr-only" data-launch-mode @checked($launchModeVal === 'monthly') />
+                    <span class="flex h-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:font-medium peer-checked:text-brand-700">Mensal</span>
+                </label>
+                <label>
+                    <input type="radio" name="launch_mode" value="installment" class="peer sr-only" data-launch-mode @checked($launchModeVal === 'installment') />
+                    <span class="flex h-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:font-medium peer-checked:text-brand-700">Parcelado</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="reference-date-field" class="sm:col-span-2 {{ in_array($launchModeVal, ['monthly', 'installment'], true) ? '' : 'hidden' }}">
+            <x-ui.input label="Data de referência" name="reference_date" :value="$referenceVal" type="date" />
+            <p class="mt-1 text-sm text-slate-500">A data de referência muda mês a mês nas recorrências e parcelas.</p>
+        </div>
+
+        <div id="installments-field" class="{{ $launchModeVal === 'installment' ? '' : 'hidden' }}">
+            <x-ui.input label="Quantidade de parcelas" name="installments" :value="$installmentsVal" type="number" min="2" max="120" />
+        </div>
+    @endif
+
     <div class="sm:col-span-2">
         <x-ui.select label="Categoria" name="financial_category_id" required id="financial_category_id">
             <option value="">Selecione…</option>
@@ -62,7 +95,9 @@
     <x-ui.input label="Documento / NF" name="document_number" :value="old('document_number', $entry?->getAttribute('document_number'))"
         placeholder="Opcional" maxlength="50" />
 
-    <x-ui.input label="Competência (DRE)" name="competence_date" :value="$competenceVal" type="date" required />
+    <div id="competence-field" class="{{ $isCreate && $launchModeVal === 'monthly' ? 'hidden' : '' }}">
+        <x-ui.input label="Data do serviço (DRE)" name="competence_date" :value="$competenceVal" type="date" :required="! ($isCreate && $launchModeVal === 'monthly')" />
+    </div>
     <x-ui.input label="Vencimento" name="due_date" :value="$dueVal" type="date" />
 
     <div class="sm:col-span-2">
@@ -112,10 +147,63 @@
 <script>
     (function () {
         var fields = document.getElementById('settlement-fields');
+        var statusForecast = document.querySelector('input[name="status"][value="forecast"]');
+        var statusSettled = document.querySelector('input[name="status"][value="settled"]');
+
+        function applyLaunchMode(mode) {
+            if (!statusForecast || !statusSettled) {
+                return;
+            }
+
+            var requiresForecast = mode === 'monthly' || mode === 'installment';
+
+            if (requiresForecast) {
+                statusForecast.checked = true;
+                statusSettled.disabled = true;
+
+                if (fields) {
+                    fields.classList.add('hidden');
+                }
+
+                return;
+            }
+
+            statusSettled.disabled = false;
+        }
+
         document.querySelectorAll('[data-status]').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 fields.classList.toggle('hidden', this.value !== 'settled');
             });
         });
+
+        var referenceField = document.getElementById('reference-date-field');
+        var installmentsField = document.getElementById('installments-field');
+        var competenceField = document.getElementById('competence-field');
+
+        document.querySelectorAll('[data-launch-mode]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                var mode = this.value;
+                applyLaunchMode(mode);
+
+                if (referenceField) {
+                    referenceField.classList.toggle('hidden', mode === 'single');
+                }
+
+                if (installmentsField) {
+                    installmentsField.classList.toggle('hidden', mode !== 'installment');
+                }
+
+                if (competenceField) {
+                    competenceField.classList.toggle('hidden', mode === 'monthly');
+                }
+            });
+        });
+
+        var selectedLaunchMode = document.querySelector('[data-launch-mode]:checked');
+
+        if (selectedLaunchMode) {
+            applyLaunchMode(selectedLaunchMode.value);
+        }
     })();
 </script>

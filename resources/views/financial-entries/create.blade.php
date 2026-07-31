@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mx-auto max-w-2xl">
-        <x-ui.page-header title="Novo lançamento" subtitle="Registre uma receita ou despesa manual.">
+        <x-ui.page-header title="Novo lançamento" subtitle="Registre um lançamento avulso, mensal recorrente ou parcelado.">
             <x-slot:actions>
                 <x-ui.link-button href="{{ route('financial-entries.index') }}" variant="secondary">Voltar</x-ui.link-button>
             </x-slot:actions>

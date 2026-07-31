@@ -34,6 +34,7 @@ final class ListFinancialEntriesController
 
         $entries = $this->baseQuery($filters)
             ->with(['category:id,code,name', 'bankAccount:id,name'])
+            ->orderByDesc('reference_date')
             ->orderByDesc('competence_date')
             ->orderByDesc('id')
             ->paginate(25)

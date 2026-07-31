@@ -7,6 +7,7 @@ namespace App\Domain\Finance\Models;
 use App\Domain\Finance\Enums\FinancialEntryPaymentMethod;
 use App\Domain\Finance\Enums\FinancialEntryType;
 use App\Domain\Finance\Enums\RecurrenceFrequency;
+use App\Domain\Finance\Enums\RecurrenceKind;
 use App\Models\User;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property FinancialEntryType $type
  * @property RecurrenceFrequency $frequency
+ * @property RecurrenceKind $kind
  * @property FinancialEntryPaymentMethod|null $payment_method
  */
 class Recurrence extends Model
@@ -31,9 +33,11 @@ class Recurrence extends Model
         return [
             'type' => FinancialEntryType::class,
             'frequency' => RecurrenceFrequency::class,
+            'kind' => RecurrenceKind::class,
             'payment_method' => FinancialEntryPaymentMethod::class,
             'starts_at' => 'date',
             'ends_at' => 'date',
+            'fixed_competence_date' => 'date',
             'active' => 'boolean',
         ];
     }

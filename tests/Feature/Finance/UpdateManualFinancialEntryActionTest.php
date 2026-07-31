@@ -195,6 +195,101 @@ final class UpdateManualFinancialEntryActionTest extends TestCase
         ]);
     }
 
+    public function test_atualiza_serie_dali_em_diante(): void
+    {
+        $company = $this->createCompany(905);
+        [$categoryId] = $this->createFinanceBase($company, 'expense');
+        [$entryIds, $recurrenceId] = $this->createRecurringSeries($company, $categoryId);
+
+        $action = app(UpdateManualFinancialEntry::class);
+
+        $action->execute($company, $entryIds[1], [
+            'financial_category_id' => $categoryId,
+            'type' => 'expense',
+            'description' => 'Serie atualizada daqui em diante',
+            'competence_date' => '2026-07-10',
+            'due_date' => '2026-07-10',
+            'amount_cents' => 55500,
+            'status' => 'forecast',
+        ], 'forward');
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryIds[0],
+            'description' => 'Parcela 1',
+            'amount_cents' => 10000,
+        ]);
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryIds[1],
+            'description' => 'Serie atualizada daqui em diante',
+            'amount_cents' => 55500,
+        ]);
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryIds[2],
+            'description' => 'Serie atualizada daqui em diante',
+            'amount_cents' => 55500,
+        ]);
+
+        $this->assertDatabaseHas('recurrences', [
+            'id' => $recurrenceId,
+            'description' => 'Serie atualizada daqui em diante',
+            'amount_cents' => 55500,
+        ]);
+    }
+
+    public function test_atualiza_toda_serie_quando_escopo_all(): void
+    {
+        $company = $this->createCompany(906);
+        [$categoryId] = $this->createFinanceBase($company, 'expense');
+        [$entryIds] = $this->createRecurringSeries($company, $categoryId);
+
+        $action = app(UpdateManualFinancialEntry::class);
+
+        $action->execute($company, $entryIds[2], [
+            'financial_category_id' => $categoryId,
+            'type' => 'expense',
+            'description' => 'Serie inteira atualizada',
+            'competence_date' => '2026-07-15',
+            'due_date' => '2026-07-15',
+            'amount_cents' => 8800,
+            'status' => 'forecast',
+        ], 'all');
+
+        foreach ($entryIds as $entryId) {
+            $this->assertDatabaseHas('financial_entries', [
+                'id' => $entryId,
+                'description' => 'Serie inteira atualizada',
+                'amount_cents' => 8800,
+            ]);
+        }
+    }
+
+    public function test_edicao_individual_preserva_vinculo_de_recorrencia_quando_campo_nao_e_informado(): void
+    {
+        $company = $this->createCompany(907);
+        [$categoryId] = $this->createFinanceBase($company, 'expense');
+        [$entryIds, $recurrenceId] = $this->createRecurringSeries($company, $categoryId);
+
+        $action = app(UpdateManualFinancialEntry::class);
+
+        $action->execute($company, $entryIds[0], [
+            'financial_category_id' => $categoryId,
+            'type' => 'expense',
+            'description' => 'Ajuste pontual',
+            'competence_date' => '2026-07-10',
+            'due_date' => '2026-07-10',
+            'amount_cents' => 11000,
+            'status' => 'forecast',
+        ]);
+
+        $this->assertDatabaseHas('financial_entries', [
+            'id' => $entryIds[0],
+            'recurrence_id' => $recurrenceId,
+            'description' => 'Ajuste pontual',
+        ]);
+    }
+
     /**
      * @return array{0: int, 1: int}
      */
@@ -381,6 +476,53 @@ final class UpdateManualFinancialEntryActionTest extends TestCase
             ]);
 
             return (int) $recurrence->getKey();
+        });
+    }
+
+    /**
+     * @return array{0: array<int, int>, 1: int}
+     */
+    private function createRecurringSeries(Company $company, int $categoryId): array
+    {
+        $tenant = app(TenantContext::class);
+
+        return $tenant->runFor($company, function () use ($categoryId): array {
+            $author = User::factory()->create();
+
+            $recurrence = Recurrence::query()->create([
+                'financial_category_id' => $categoryId,
+                'type' => 'expense',
+                'description' => 'Serie base',
+                'amount_cents' => 10000,
+                'frequency' => 'monthly',
+                'kind' => 'recurring',
+                'day_of_month' => 10,
+                'starts_at' => '2026-07-10',
+                'installments_generated' => 0,
+                'active' => true,
+                'created_by' => $author->getKey(),
+            ]);
+
+            $entryIds = [];
+
+            foreach (['2026-07-10', '2026-08-10', '2026-09-10'] as $index => $referenceDate) {
+                $entry = FinancialEntry::query()->create([
+                    'financial_category_id' => $categoryId,
+                    'type' => 'expense',
+                    'description' => 'Parcela '.($index + 1),
+                    'competence_date' => '2026-07-10',
+                    'reference_date' => $referenceDate,
+                    'due_date' => $referenceDate,
+                    'amount_cents' => 10000,
+                    'status' => 'forecast',
+                    'recurrence_id' => $recurrence->getKey(),
+                    'created_by' => $author->getKey(),
+                ]);
+
+                $entryIds[] = (int) $entry->getKey();
+            }
+
+            return [$entryIds, (int) $recurrence->getKey()];
         });
     }
 }

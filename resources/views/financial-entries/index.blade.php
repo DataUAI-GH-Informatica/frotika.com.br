@@ -82,6 +82,7 @@
                 <thead class="sticky top-0 z-10 bg-slate-50">
                     <tr class="border-b border-slate-200">
                         <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-slate-500">Competência</th>
+                        <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-slate-500">Referência</th>
                         <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-slate-500">Descrição</th>
                         <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-slate-500">Categoria</th>
                         <th class="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-slate-500">Situação</th>
@@ -98,6 +99,7 @@
                         <tr class="h-9 cursor-pointer border-b border-slate-100 hover:bg-slate-50"
                             onclick="window.location='{{ route('financial-entries.show', ['entry' => $entry->getKey()]) }}'">
                             <td class="px-3 font-mono tabular text-slate-600">{{ Format::date($entry->getAttribute('competence_date')) }}</td>
+                            <td class="px-3 font-mono tabular text-slate-600">{{ Format::date($entry->getAttribute('reference_date')) ?: '—' }}</td>
                             <td class="max-w-xs truncate px-3 text-slate-900">{{ $entry->getAttribute('description') }}</td>
                             <td class="px-3 font-mono text-xs tabular text-slate-500">{{ $entry->category?->getAttribute('code') }}</td>
                             <td class="px-3"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold {{ $statusChip($entry->getAttribute('status')) }}">{{ $entry->getAttribute('status')->label() }}</span></td>
@@ -110,7 +112,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 <div class="px-4 py-12 text-center">
                                     <p class="font-display text-lg font-semibold text-slate-900">Nenhum lançamento encontrado.</p>
                                     <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">Importe CT-e para gerar receitas automaticamente ou registre um lançamento manual.</p>
@@ -127,7 +129,7 @@
                 @if ($entries->isNotEmpty())
                     <tfoot class="sticky bottom-0 bg-slate-50">
                         <tr class="border-t border-slate-200 text-sm">
-                            <td colspan="4" class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                            <td colspan="5" class="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-wide text-slate-500">
                                 Receitas {{ Format::money($totals['revenue_cents']) }} · Despesas {{ Format::money(-$totals['expense_cents']) }} · Resultado
                             </td>
                             <td @class([

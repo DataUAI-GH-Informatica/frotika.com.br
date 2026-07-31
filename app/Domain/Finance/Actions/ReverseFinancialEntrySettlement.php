@@ -54,6 +54,8 @@ final class ReverseFinancialEntrySettlement
                 'status' => FinancialEntryStatus::Forecast->value,
                 'paid_at' => null,
                 'payment_method' => null,
+                'settlement_discount_cents' => 0,
+                'settlement_interest_cents' => 0,
                 'reconciled_at' => null,
             ])->save();
 

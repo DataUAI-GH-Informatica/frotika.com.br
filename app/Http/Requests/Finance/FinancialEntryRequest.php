@@ -25,7 +25,9 @@ abstract class FinancialEntryRequest extends FormRequest
             'financial_category_id' => ['required', 'integer', 'min:1'],
             'description' => ['required', 'string', 'max:200'],
             'document_number' => ['nullable', 'string', 'max:50'],
-            'competence_date' => ['required', 'date'],
+            'launch_mode' => ['sometimes', Rule::in(['single', 'monthly', 'installment'])],
+            'competence_date' => ['nullable', 'date', 'required_unless:launch_mode,monthly'],
+            'reference_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'amount_cents' => ['required', 'integer', 'min:1'],
             'status' => ['required', Rule::in(['forecast', 'settled'])],
@@ -33,6 +35,7 @@ abstract class FinancialEntryRequest extends FormRequest
             'paid_at' => ['nullable', 'date', 'required_if:status,settled', 'prohibited_if:status,forecast'],
             'payment_method' => ['nullable', Rule::in($methods)],
             'vehicle_id' => ['nullable', 'integer', 'min:1'],
+            'installments' => ['nullable', 'integer', 'min:2'],
         ];
     }
 
@@ -59,7 +62,9 @@ abstract class FinancialEntryRequest extends FormRequest
             'financial_category_id' => 'categoria',
             'description' => 'descrição',
             'document_number' => 'documento',
-            'competence_date' => 'data de competência',
+            'launch_mode' => 'modo de lançamento',
+            'competence_date' => 'data do serviço',
+            'reference_date' => 'data de referência',
             'due_date' => 'data de vencimento',
             'amount_cents' => 'valor',
             'status' => 'situação',
@@ -67,12 +72,16 @@ abstract class FinancialEntryRequest extends FormRequest
             'paid_at' => 'data de pagamento',
             'payment_method' => 'meio de pagamento',
             'vehicle_id' => 'veículo',
+            'installments' => 'quantidade de parcelas',
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        $launchMode = (string) ($this->input('launch_mode') ?: 'single');
+
         $this->merge([
+            'launch_mode' => $launchMode,
             'status' => (string) ($this->input('status') ?: 'forecast'),
             'description' => trim((string) $this->input('description', '')),
             'document_number' => $this->nullableTrimmed('document_number'),
@@ -81,7 +90,9 @@ abstract class FinancialEntryRequest extends FormRequest
             'paid_at' => $this->input('paid_at') ?: null,
             'payment_method' => $this->nullableTrimmed('payment_method'),
             'vehicle_id' => $this->nullableInt('vehicle_id'),
+            'reference_date' => $this->input('reference_date') ?: null,
             'due_date' => $this->input('due_date') ?: null,
+            'installments' => $this->nullableInt('installments'),
         ]);
     }
 
