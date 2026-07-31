@@ -51,7 +51,9 @@
                             class="inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold {{ $statusChip }}">{{ $status->label() }}</span>
                         <span class="text-xs uppercase tracking-wide text-slate-400">{{ $type->label() }}</span>
                         @if ($installmentNumber !== null && $installmentTotal !== null)
-                            <span class="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-2xs font-semibold text-brand-700">Parcela {{ $installmentNumber }}/{{ $installmentTotal }}</span>
+                            <span
+                                class="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-2xs font-semibold text-brand-700">Parcela
+                                {{ $installmentNumber }}/{{ $installmentTotal }}</span>
                         @endif
                         @if ($isSynced)
                             <span
@@ -178,7 +180,8 @@
                     @csrf
                     @method('DELETE')
                     <input type="hidden" name="scope" value="single" />
-                    <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar somente este lançamento</button>
+                    <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar somente este
+                        lançamento</button>
                 </form>
 
                 @if ($entry->getAttribute('recurrence_id') !== null)
@@ -187,16 +190,19 @@
                         @csrf
                         @method('DELETE')
                         <input type="hidden" name="scope" value="forward" />
-                        <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar deste mês em diante</button>
+                        <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar deste mês em
+                            diante</button>
                     </form>
 
                     @if ($installmentTotal !== null)
-                        <form method="POST" action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
+                        <form method="POST"
+                            action="{{ route('financial-entries.destroy', ['entry' => $entry->getKey()]) }}"
                             onsubmit="return confirm('Cancelar toda a série de parcelas?');">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="scope" value="all" />
-                            <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar todas as parcelas</button>
+                            <button type="submit" class="text-sm text-danger-700 hover:text-danger-800">Cancelar todas as
+                                parcelas</button>
                         </form>
                     @endif
                 @endif

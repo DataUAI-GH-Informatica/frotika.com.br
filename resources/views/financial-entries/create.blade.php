@@ -16,7 +16,8 @@
                 @include('financial-entries._form', ['entry' => null])
 
                 <div class="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
-                    <x-ui.link-button href="{{ route('financial-entries.index') }}" variant="secondary">Cancelar</x-ui.link-button>
+                    <x-ui.link-button href="{{ route('financial-entries.index') }}"
+                        variant="secondary">Cancelar</x-ui.link-button>
                     <x-ui.button type="submit">Registrar lançamento</x-ui.button>
                 </div>
             </form>
